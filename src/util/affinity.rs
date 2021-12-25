@@ -1,7 +1,6 @@
 use super::pod::{HasPodSpec, HasPodSpecMut};
 use k8s_openapi::api::core::v1::{self as core, Affinity, PodSpec};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
-use std::collections::BTreeMap;
 
 pub const K8S_HOSTNAME: &str = "kubernetes.io/hostname";
 
@@ -29,18 +28,12 @@ impl<T: HasPodSpecMut> HasAffinityMut for T {
     }
 }
 
-pub fn self_anti_affinity<T: HasAffinityMut>(x: T) -> T {
+pub fn self_anti_affinity<T: HasAffinityMut>(x: T, sel: LabelSelector) -> T {
     let affinity = Affinity {
         pod_anti_affinity: Some(core::PodAntiAffinity {
             required_during_scheduling_ignored_during_execution: Some(vec![
                 core::PodAffinityTerm {
-                    label_selector: Some(LabelSelector {
-                        match_labels: Some(BTreeMap::from([(
-                            "name".to_string(),
-                            "ingester".to_string(),
-                        )])),
-                        ..Default::default()
-                    }),
+                    label_selector: Some(sel),
                     topology_key: K8S_HOSTNAME.to_string(),
                     ..Default::default()
                 },
@@ -55,8 +48,38 @@ pub fn self_anti_affinity<T: HasAffinityMut>(x: T) -> T {
 
 #[cfg(test)]
 mod tests {
+    use k8s_openapi::api::core::v1::{self as core, PodSpec};
+    use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
+    use std::collections::BTreeMap;
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn pod_anti_affinity() {
+        let sel = LabelSelector {
+            match_labels: Some(BTreeMap::from([(
+                "name".to_string(),
+                "ingester".to_string(),
+            )])),
+            ..Default::default()
+        };
+
+        let ps: Option<PodSpec> = Some(Default::default());
+        let x = super::self_anti_affinity(ps, sel.clone());
+        assert_eq!(
+            core::PodAffinityTerm {
+                label_selector: Some(sel),
+                topology_key: super::K8S_HOSTNAME.to_string(),
+                ..Default::default()
+            },
+            x.unwrap()
+                .affinity
+                .unwrap()
+                .pod_anti_affinity
+                .unwrap()
+                .required_during_scheduling_ignored_during_execution
+                .unwrap()
+                .get(0)
+                .unwrap()
+                .clone(),
+        );
     }
 }
