@@ -1,40 +1,59 @@
+use super::conventions::{Has, HasMut};
 use k8s_openapi::api::apps::v1::DeploymentSpec;
 use k8s_openapi::api::core::v1::{PodSpec, PodTemplateSpec};
 
-pub trait HasPodSpec {
-    fn pod_spec(&self) -> Option<PodSpec>;
-}
-
-pub trait HasPodSpecMut: Clone + HasPodSpec {
-    fn with_pod_spec(self, podspec: PodSpec) -> Self;
-}
-
-impl HasPodSpec for Option<PodSpec> {
-    fn pod_spec(&self) -> Option<PodSpec> {
-        self.clone()
+impl Has<PodTemplateSpec> for DeploymentSpec {
+    fn get(&self) -> Option<PodTemplateSpec> {
+        Some(self.template.clone())
     }
 }
 
-impl HasPodSpecMut for Option<PodSpec> {
-    fn with_pod_spec(self, ps: PodSpec) -> Self {
-        Some(ps)
-    }
-}
-
-impl HasPodSpec for DeploymentSpec {
-    fn pod_spec(&self) -> Option<PodSpec> {
-        self.template.spec.clone()
-    }
-}
-
-impl HasPodSpecMut for DeploymentSpec {
-    fn with_pod_spec(self, ps: PodSpec) -> Self {
+impl HasMut<PodTemplateSpec> for DeploymentSpec {
+    fn with(&self, x: PodTemplateSpec) -> Self {
         DeploymentSpec {
-            template: PodTemplateSpec {
-                spec: Some(ps),
-                ..self.template.clone()
-            },
+            template: x,
             ..self.clone()
         }
+    }
+}
+
+impl<T> Has<PodSpec> for T
+where
+    T: Has<PodTemplateSpec>,
+{
+    fn get(&self) -> Option<PodSpec> {
+        self.get().and_then(|x| x.spec.clone())
+    }
+}
+
+impl<T> HasMut<PodSpec> for T
+where
+    T: HasMut<PodTemplateSpec>,
+{
+    fn with(&self, x: PodSpec) -> Self {
+        self.with(PodTemplateSpec {
+            spec: Some(x),
+            ..self.get().clone().unwrap_or_default()
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_deployment_spec_has_pod_spec() {
+        let ps = PodSpec {
+            active_deadline_seconds: Some(1),
+            ..Default::default()
+        };
+
+        let def: DeploymentSpec = Default::default();
+        let dep = def.with(ps.clone());
+        assert_eq!(
+            Some(1),
+            dep.get().and_then(|x: PodSpec| x.active_deadline_seconds),
+        )
     }
 }
