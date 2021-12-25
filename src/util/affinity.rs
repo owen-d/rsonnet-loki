@@ -1,4 +1,7 @@
+use std::collections::BTreeMap;
+
 use super::conventions::{Has, HasMut};
+use super::metadata::{Name, K8S_NAME_KEY};
 use k8s_openapi::api::core::v1::{self as core, Affinity, PodSpec};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
 
@@ -20,58 +23,43 @@ impl<T: HasMut<PodSpec>> HasMut<Affinity> for T {
     }
 }
 
-pub fn self_anti_affinity<T: HasMut<Affinity>>(x: T, sel: LabelSelector) -> T {
-    let affinity = Affinity {
-        pod_anti_affinity: Some(core::PodAntiAffinity {
-            required_during_scheduling_ignored_during_execution: Some(vec![
-                core::PodAffinityTerm {
-                    label_selector: Some(sel),
-                    topology_key: K8S_HOSTNAME.to_string(),
-                    ..Default::default()
-                },
-            ]),
+pub fn self_anti_affinity<T>(x: T) -> Option<T>
+where
+    T: HasMut<Affinity> + Has<Name>,
+{
+    // If it has no name associated, this is a noop
+    x.get().map(|name: Name| {
+        let affinity = Affinity {
+            pod_anti_affinity: Some(core::PodAntiAffinity {
+                required_during_scheduling_ignored_during_execution: Some(vec![
+                    core::PodAffinityTerm {
+                        label_selector: Some(LabelSelector {
+                            match_labels: Some(BTreeMap::from([(K8S_NAME_KEY.to_string(), name)])),
+                            ..Default::default()
+                        }),
+                        topology_key: K8S_HOSTNAME.to_string(),
+                        ..Default::default()
+                    },
+                ]),
+                ..Default::default()
+            }),
             ..Default::default()
-        }),
-        ..Default::default()
-    };
+        };
 
-    x.with(affinity)
+        x.with(affinity)
+    })
 }
 
 #[cfg(test)]
 mod tests {
-    use k8s_openapi::api::core::v1::{self as core, PodSpec};
-    use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
-    use std::collections::BTreeMap;
+    use super::*;
+    use k8s_openapi::api::core::v1::PodTemplateSpec;
 
     #[test]
     fn pod_anti_affinity() {
-        let sel = LabelSelector {
-            match_labels: Some(BTreeMap::from([(
-                "name".to_string(),
-                "ingester".to_string(),
-            )])),
-            ..Default::default()
-        };
-
-        let ps: Option<PodSpec> = Some(Default::default());
-        let x = super::self_anti_affinity(ps, sel.clone());
-        assert_eq!(
-            core::PodAffinityTerm {
-                label_selector: Some(sel),
-                topology_key: super::K8S_HOSTNAME.to_string(),
-                ..Default::default()
-            },
-            x.unwrap()
-                .affinity
-                .unwrap()
-                .pod_anti_affinity
-                .unwrap()
-                .required_during_scheduling_ignored_during_execution
-                .unwrap()
-                .get(0)
-                .unwrap()
-                .clone(),
-        );
+        let def: PodTemplateSpec = Default::default();
+        let pt = def.with("ingester".to_string() as Name);
+        let x = super::self_anti_affinity(pt.clone());
+        assert_eq!(Some("ingester".to_string()), x.get());
     }
 }
