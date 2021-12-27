@@ -18,6 +18,7 @@ pub trait HasMut<T>
 where
     Self: Clone + Has<T>,
 {
+    #[must_use]
     fn with(&self, x: T) -> Self;
 }
 

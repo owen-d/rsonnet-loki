@@ -48,7 +48,7 @@ where
         let ls = self
             .get()
             .and_then(|x: ObjectMeta| x.labels)
-            .or(Some(Default::default()))
+            .or_else(|| Some(Default::default()))
             .map(|ls| {
                 let mut res = ls;
                 res.extend([(K8S_NAME_KEY.to_string(), x)]);
