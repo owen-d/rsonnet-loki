@@ -22,7 +22,7 @@ where
     T: Has<PodTemplateSpec>,
 {
     fn get(&self) -> Option<PodSpec> {
-        self.get().and_then(|x| x.spec.clone())
+        self.get().and_then(|x| x.spec)
     }
 }
 
@@ -33,7 +33,7 @@ where
     fn with(&self, x: PodSpec) -> Self {
         self.with(PodTemplateSpec {
             spec: Some(x),
-            ..self.get().clone().unwrap_or_default()
+            ..self.get().unwrap_or_default()
         })
     }
 }
@@ -50,7 +50,7 @@ mod tests {
         };
 
         let def: DeploymentSpec = Default::default();
-        let dep = def.with(ps.clone());
+        let dep = def.with(ps);
         assert_eq!(
             Some(1),
             dep.get().and_then(|x: PodSpec| x.active_deadline_seconds),

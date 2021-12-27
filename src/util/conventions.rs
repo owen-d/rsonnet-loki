@@ -26,7 +26,7 @@ where
     T: Clone,
 {
     fn with(&self, x: T) -> Self {
-        x.clone()
+        x
     }
 }
 

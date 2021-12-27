@@ -17,7 +17,7 @@ impl<T: HasMut<PodSpec>> HasMut<Affinity> for T {
     fn with(&self, x: Affinity) -> Self {
         let spec = PodSpec {
             affinity: Some(x),
-            ..self.get().clone().unwrap_or_default()
+            ..self.get().unwrap_or_default()
         };
         self.with(spec)
     }
@@ -59,7 +59,7 @@ mod tests {
     fn pod_anti_affinity() {
         let def: PodTemplateSpec = Default::default();
         let pt = def.with("ingester".to_string() as Name);
-        let x = super::self_anti_affinity(pt.clone());
+        let x = super::self_anti_affinity(pt);
         assert_eq!(Some("ingester".to_string()), x.get());
     }
 }
