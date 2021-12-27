@@ -23,6 +23,9 @@ where
     }
 }
 
+// Name corresponds to the labelset ("name", <component>),
+// which is used to determine the component. This is then
+// used to to do things such bootstrap as anti-affinity rules.
 pub type Name = String;
 pub const K8S_NAME_KEY: &str = "name";
 
