@@ -13,4 +13,5 @@ path = "src/lib.rs"
 name = "rsonnet-loki"
 
 [dependencies]
+itertools = "0.10.3"
 k8s-openapi = { version = "0.13.1", features = ["v1_22"] }

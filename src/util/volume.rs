@@ -1,7 +1,7 @@
 use super::conventions::{Has, HasMut};
 use k8s_openapi::api::core::v1::{PodSpec, Volume};
 
-type Volumes = Vec<Volume>;
+pub type Volumes = Vec<Volume>;
 
 impl<T> Has<Volumes> for T
 where
