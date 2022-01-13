@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use super::conventions::{Has, HasMut};
+use super::conventions::{Has, With};
 use super::metadata::{Name, K8S_NAME_KEY};
 use k8s_openapi::api::core::v1::{self as core, Affinity, PodSpec};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
@@ -13,7 +13,7 @@ impl<T: Has<PodSpec>> Has<Affinity> for T {
     }
 }
 
-impl<T: HasMut<PodSpec>> HasMut<Affinity> for T {
+impl<T: With<PodSpec>> With<Affinity> for T {
     fn with(&self, x: Affinity) -> Self {
         let spec = PodSpec {
             affinity: Some(x),
@@ -25,7 +25,7 @@ impl<T: HasMut<PodSpec>> HasMut<Affinity> for T {
 
 pub fn self_anti_affinity<T>(x: T) -> Option<T>
 where
-    T: HasMut<Affinity> + Has<Name>,
+    T: With<Affinity> + Has<Name>,
 {
     // If it has no name associated, this is a noop
     x.get().map(|name: Name| {
@@ -45,7 +45,6 @@ where
             }),
             ..Default::default()
         };
-
         x.with(affinity)
     })
 }

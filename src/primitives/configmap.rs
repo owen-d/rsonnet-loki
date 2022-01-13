@@ -1,4 +1,4 @@
-use super::conventions::{Has, HasMut};
+use super::conventions::{Has, With};
 use super::volume::Volumes;
 use k8s_openapi::api::core::v1::{ConfigMap, ConfigMapVolumeSource, Volume};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
@@ -21,10 +21,9 @@ where
     }
 }
 
-// TODO: use Result<A, impl Error>
 pub fn with_config_hash<A, B>(x: A, cfgs: B) -> A
 where
-    A: Has<Vec<ConfigMapVolumeSource>> + HasMut<ObjectMeta>,
+    A: Has<Vec<ConfigMapVolumeSource>> + With<ObjectMeta>,
     B: Has<Vec<ConfigMap>>,
 {
     let sources: Vec<ConfigMapVolumeSource> = x.get().unwrap_or_default();

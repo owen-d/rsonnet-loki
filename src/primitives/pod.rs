@@ -1,4 +1,4 @@
-use super::conventions::{Has, HasMut};
+use super::conventions::{Has, With};
 use k8s_openapi::api::apps::v1::DeploymentSpec;
 use k8s_openapi::api::core::v1::{PodSpec, PodTemplateSpec};
 
@@ -8,7 +8,7 @@ impl Has<PodTemplateSpec> for DeploymentSpec {
     }
 }
 
-impl HasMut<PodTemplateSpec> for DeploymentSpec {
+impl With<PodTemplateSpec> for DeploymentSpec {
     fn with(&self, x: PodTemplateSpec) -> Self {
         DeploymentSpec {
             template: x,
@@ -26,9 +26,9 @@ where
     }
 }
 
-impl<T> HasMut<PodSpec> for T
+impl<T> With<PodSpec> for T
 where
-    T: HasMut<PodTemplateSpec>,
+    T: With<PodTemplateSpec>,
 {
     fn with(&self, x: PodSpec) -> Self {
         self.with(PodTemplateSpec {

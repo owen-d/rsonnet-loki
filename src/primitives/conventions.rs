@@ -14,7 +14,7 @@ impl<T: Clone> Has<T> for Option<T> {
     }
 }
 
-pub trait HasMut<T>
+pub trait With<T>
 where
     Self: Clone + Has<T>,
 {
@@ -22,7 +22,7 @@ where
     fn with(&self, x: T) -> Self;
 }
 
-impl<T> HasMut<T> for T
+impl<T> With<T> for T
 where
     T: Clone,
 {
@@ -31,7 +31,7 @@ where
     }
 }
 
-impl<T> HasMut<T> for Option<T>
+impl<T> With<T> for Option<T>
 where
     T: Clone,
 {

@@ -1,4 +1,4 @@
-use super::conventions::{Has, HasMut};
+use super::conventions::{Has, With};
 use k8s_openapi::api::core::v1::PodTemplateSpec;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
@@ -11,9 +11,9 @@ where
     }
 }
 
-impl<T> HasMut<ObjectMeta> for T
+impl<T> With<ObjectMeta> for T
 where
-    T: HasMut<PodTemplateSpec>,
+    T: With<PodTemplateSpec>,
 {
     fn with(&self, x: ObjectMeta) -> Self {
         self.with(PodTemplateSpec {
@@ -40,9 +40,9 @@ where
     }
 }
 
-impl<T> HasMut<Name> for T
+impl<T> With<Name> for T
 where
-    T: HasMut<ObjectMeta>,
+    T: With<ObjectMeta>,
 {
     fn with(&self, x: Name) -> Self {
         let ls = self

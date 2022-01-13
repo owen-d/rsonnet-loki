@@ -1,4 +1,4 @@
-use super::conventions::{Has, HasMut};
+use super::conventions::{Has, With};
 use k8s_openapi::api::core::v1::{PodSpec, Volume};
 
 pub type Volumes = Vec<Volume>;
@@ -12,9 +12,9 @@ where
     }
 }
 
-impl<T> HasMut<Volumes> for T
+impl<T> With<Volumes> for T
 where
-    T: Clone + HasMut<PodSpec>,
+    T: Clone + With<PodSpec>,
 {
     fn with(&self, x: Volumes) -> Self {
         self.with(PodSpec {
