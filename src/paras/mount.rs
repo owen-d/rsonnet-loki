@@ -5,7 +5,7 @@ use crate::builtin::{Has, VolumeMounts, Volumes, With};
 /// Specify a volume should be mounted into the following container.
 fn mount_with<F, A, B>(f: F, vs: A, x: B) -> B
 where
-    F: FnMut(Volume) -> VolumeMount,
+    F: Fn(Volume) -> VolumeMount,
     A: Has<Volumes>,
     B: With<VolumeMounts>,
 {

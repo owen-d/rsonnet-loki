@@ -13,6 +13,7 @@ There are concepts built on top of the primitives. They can be used to overlay t
 * Using the `name` label in metadata for standardized selection lik `name=<component>`
 * Hashing the configmap(s) a pod mounts and including that in the pod's annotations to force rollouts when the configmap changes
 * Building self-anti affinity rules so data nodes aren't scheduled together.
+* Mounting volumes into consistently named paths within a container.
 
 ### lokirs
 
