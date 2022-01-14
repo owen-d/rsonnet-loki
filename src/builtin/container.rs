@@ -1,0 +1,32 @@
+use super::{Has, Name, VolumeMounts, With};
+use k8s_openapi::api::core::v1::Container;
+
+impl Has<Name> for Container {
+    fn get(&self) -> Option<Name> {
+        Some(self.name.clone())
+    }
+}
+
+impl With<Name> for Container {
+    fn with(&self, x: Name) -> Self {
+        Self {
+            name: x,
+            ..self.clone()
+        }
+    }
+}
+
+impl Has<VolumeMounts> for Container {
+    fn get(&self) -> Option<VolumeMounts> {
+        self.volume_mounts.clone()
+    }
+}
+
+impl With<VolumeMounts> for Container {
+    fn with(&self, x: VolumeMounts) -> Self {
+        Self {
+            volume_mounts: Some(x),
+            ..self.clone()
+        }
+    }
+}

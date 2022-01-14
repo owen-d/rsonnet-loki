@@ -1,7 +1,8 @@
 use super::conventions::{Has, With};
-use k8s_openapi::api::core::v1::{PodSpec, Volume};
+use k8s_openapi::api::core::v1::{PodSpec, Volume, VolumeMount};
 
 pub type Volumes = Vec<Volume>;
+pub type VolumeMounts = Vec<VolumeMount>;
 
 impl<T> Has<Volumes> for T
 where
