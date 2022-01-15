@@ -2,6 +2,7 @@ use super::conventions::{Has, With};
 use derive_more::{From, Into};
 use k8s_openapi::api::core::v1::PodTemplateSpec;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use maplit::btreemap;
 
 impl<T> Has<ObjectMeta> for T
 where
@@ -27,12 +28,31 @@ where
 // Name corresponds to the labelset ("name", <component>),
 // which is used to determine the component. This is then
 // used to to do things such bootstrap as anti-affinity rules.
-#[derive(PartialEq, From, Into)]
+#[derive(PartialEq, From, Into, Clone)]
 pub struct Name(String);
 
 impl Name {
+    pub fn new(x: String) -> Self {
+        Self(x)
+    }
     pub fn key() -> String {
         "name".to_string()
+    }
+
+    pub(crate) fn get(&self) -> k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector {
+        todo!()
+    }
+}
+
+impl From<Name> for ObjectMeta {
+    fn from(x: Name) -> Self {
+        ObjectMeta {
+            labels: Some(btreemap! {
+                Name::key() => String::from(x.clone()),
+            }),
+            name: Some(String::from(x.clone())),
+            ..Default::default()
+        }
     }
 }
 
