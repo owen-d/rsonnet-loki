@@ -1,4 +1,5 @@
 use super::conventions::{Has, With};
+use derive_more::{From, Into};
 use k8s_openapi::api::core::v1::PodTemplateSpec;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
@@ -26,8 +27,14 @@ where
 // Name corresponds to the labelset ("name", <component>),
 // which is used to determine the component. This is then
 // used to to do things such bootstrap as anti-affinity rules.
-pub type Name = String;
-pub const K8S_NAME_KEY: &str = "name";
+#[derive(PartialEq, From, Into)]
+pub struct Name(String);
+
+impl Name {
+    pub fn key() -> String {
+        "name".to_string()
+    }
+}
 
 impl<T> Has<Name> for T
 where
@@ -36,7 +43,7 @@ where
     fn get(&self) -> Option<Name> {
         self.get()
             .and_then(|x| x.labels)
-            .map(|ls: std::collections::BTreeMap<String, String>| ls[K8S_NAME_KEY].clone())
+            .map(|ls: std::collections::BTreeMap<String, String>| ls[&Name::key()].clone().into())
     }
 }
 
@@ -51,7 +58,7 @@ where
             .or_else(|| Some(Default::default()))
             .map(|ls| {
                 let mut res = ls;
-                res.extend([(K8S_NAME_KEY.to_string(), x)]);
+                res.extend([(Name::key(), x.into())]);
                 res
             });
 

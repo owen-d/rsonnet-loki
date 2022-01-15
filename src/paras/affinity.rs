@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::builtin::conventions::{Has, With};
-use crate::builtin::metadata::{Name, K8S_NAME_KEY};
+use crate::builtin::metadata::Name;
 use k8s_openapi::api::core::v1::{self as core, Affinity, PodSpec};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
 
@@ -34,7 +34,7 @@ where
                 required_during_scheduling_ignored_during_execution: Some(vec![
                     core::PodAffinityTerm {
                         label_selector: Some(LabelSelector {
-                            match_labels: Some(BTreeMap::from([(K8S_NAME_KEY.to_string(), name)])),
+                            match_labels: Some(BTreeMap::from([(Name::key(), name.into())])),
                             ..Default::default()
                         }),
                         topology_key: K8S_HOSTNAME.to_string(),

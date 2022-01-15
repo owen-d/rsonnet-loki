@@ -3,14 +3,14 @@ use k8s_openapi::api::core::v1::Container;
 
 impl Has<Name> for Container {
     fn get(&self) -> Option<Name> {
-        Some(self.name.clone())
+        Some(self.name.clone().into())
     }
 }
 
 impl With<Name> for Container {
     fn with(&self, x: Name) -> Self {
         Self {
-            name: x,
+            name: x.into(),
             ..self.clone()
         }
     }
