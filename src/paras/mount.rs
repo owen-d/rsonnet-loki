@@ -12,6 +12,7 @@ where
     x.with(vs.get().unwrap_or_default().into_iter().map(f).collect())
 }
 
+/// mount mounts volumes into a type with volume mounts at the path `/etc/volumes/${volume}`
 pub fn mount<A: Has<Volumes>, B: With<VolumeMounts>>(vs: A, x: B) -> B {
     mount_with(map_name, vs, x)
 }
