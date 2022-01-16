@@ -28,9 +28,8 @@ where
     T: With<Affinity> + Has<Name>,
 {
     // If it has no name associated, this is a noop
-    x.get()
-        .and_then(|name: Name| anti_affinity(name))
-        .map(|aff| x.with(aff))
+    let name: Option<Name> = x.get();
+    name.and_then(anti_affinity).map(|aff| x.with(aff))
 }
 
 pub fn anti_affinity<T: Has<Name>>(x: T) -> Option<Affinity> {

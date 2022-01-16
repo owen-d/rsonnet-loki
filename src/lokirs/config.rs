@@ -1,7 +1,7 @@
 use k8s_openapi::api::core::v1::ConfigMap;
 use maplit::btreemap;
 
-use crate::builtin::Name;
+use crate::builtin::{configmap::HashableConfigMap, Name};
 
 pub const DEFAULT_CONFIG: &str = "
 auth_enabled: false
@@ -33,12 +33,12 @@ schema_config:
         period: 24h
 ";
 
-pub fn config() -> ConfigMap {
-    ConfigMap {
-        metadata: Name::new("loki".to_string()).into(),
+pub fn config() -> HashableConfigMap {
+    HashableConfigMap::new(ConfigMap {
         data: Some(btreemap! {
-            format!("config.yaml") => format!("{}", DEFAULT_CONFIG),
+            "config.yaml".to_string() => DEFAULT_CONFIG.to_string(),
         }),
+        metadata: Name::new("loki".to_string()).into(),
         ..Default::default()
-    }
+    })
 }

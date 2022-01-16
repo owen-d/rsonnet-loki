@@ -1,5 +1,7 @@
 use super::conventions::{Has, With};
 use super::volume::Volumes;
+use super::Name;
+use derive_more::{From, Into};
 use k8s_openapi::api::core::v1::{ConfigMap, ConfigMapVolumeSource, Volume};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use std::collections::hash_map::DefaultHasher;
@@ -8,6 +10,7 @@ use std::hash::{Hash, Hasher};
 
 pub const CONFIG_HASH_ANNOTATION: &str = "config_hash";
 
+// Volume -> ConfigMapVolumeSource
 impl<T> Has<Vec<ConfigMapVolumeSource>> for T
 where
     T: Has<Volumes>,
@@ -67,7 +70,40 @@ where
     })
 }
 
+impl Has<ObjectMeta> for ConfigMap {
+    fn get(&self) -> Option<ObjectMeta> {
+        Some(self.metadata.clone())
+    }
+}
+
+#[derive(From, Into, Clone)]
 pub struct HashableConfigMap(ConfigMap);
+
+impl HashableConfigMap {
+    pub fn new(x: ConfigMap) -> Self {
+        Self(x)
+    }
+}
+
+impl From<HashableConfigMap> for Volume {
+    fn from(x: HashableConfigMap) -> Self {
+        let n: Name = x.0.get().unwrap_or_default();
+        Volume {
+            name: n.into(),
+            ..Default::default()
+        }
+    }
+}
+
+impl From<HashableConfigMap> for ConfigMapVolumeSource {
+    fn from(x: HashableConfigMap) -> Self {
+        ConfigMapVolumeSource {
+            name: x.0.get().map(|n: Name| n.into()),
+            ..Default::default()
+        }
+    }
+}
+
 impl Hash for HashableConfigMap {
     fn hash<H: Hasher>(&self, state: &mut H) {
         if let Some(data) = &self.0.binary_data {

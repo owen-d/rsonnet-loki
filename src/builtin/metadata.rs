@@ -28,7 +28,7 @@ where
 // Name corresponds to the labelset ("name", <component>),
 // which is used to determine the component. This is then
 // used to to do things such bootstrap as anti-affinity rules.
-#[derive(PartialEq, From, Into, Clone)]
+#[derive(PartialEq, From, Into, Clone, Default)]
 pub struct Name(String);
 
 impl Name {
@@ -50,7 +50,7 @@ impl From<Name> for ObjectMeta {
             labels: Some(btreemap! {
                 Name::key() => String::from(x.clone()),
             }),
-            name: Some(String::from(x.clone())),
+            name: Some(String::from(x)),
             ..Default::default()
         }
     }

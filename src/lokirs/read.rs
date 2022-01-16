@@ -1,5 +1,6 @@
 use k8s_openapi::api::apps::v1::{self as apps, DeploymentSpec};
-use k8s_openapi::api::core::v1::{PodSpec, PodTemplateSpec};
+use k8s_openapi::api::core::v1::PodSpec;
+use k8s_openapi::api::core::v1::PodTemplateSpec;
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 
 use crate::builtin::{Name, Volumes};
@@ -26,7 +27,7 @@ impl Reads {
         Name::new(READ_NAME.to_string())
     }
     pub fn deployment_spec(&self) -> DeploymentSpec {
-        let _dep_spec = apps::DeploymentSpec {
+        apps::DeploymentSpec {
             replicas: Some(self.replicas),
             selector: Reads::name().get(),
             strategy: Some(apps::DeploymentStrategy {
@@ -41,15 +42,14 @@ impl Reads {
                 ..Default::default()
             },
             ..Default::default()
-        };
-        _dep_spec
+        }
     }
 
     fn pod_spec() -> PodSpec {
         PodSpec {
             affinity: anti_affinity(Reads::name()),
             // containers: todo!(),
-            // volumes: todo!(),
+            volumes: Some(vec![super::config::config().into()]),
             ..Default::default()
         }
     }
