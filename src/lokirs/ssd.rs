@@ -8,8 +8,9 @@ use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 
 use crate::builtin::configmap::with_config_hash;
-use crate::builtin::Name;
+use crate::builtin::{Name, With};
 use crate::paras::affinity::anti_affinity;
+use crate::paras::args::Target;
 use crate::paras::mount::{self, mount_path};
 
 pub const READ_NAME: &str = "read";
@@ -43,7 +44,11 @@ impl SSD {
             vec![super::config::config()],
             PodTemplateSpec {
                 metadata: Some(Self::read_name().into()),
-                spec: self.pod_spec().into(),
+                spec: self
+                    .pod_spec(
+                        self.container().with(Target::new(WRITE_NAME.to_string())), // Add write target
+                    )
+                    .into(),
             },
         );
         let spec = DeploymentSpec {
@@ -69,20 +74,25 @@ impl SSD {
         super::config::config().into()
     }
 
-    fn pod_spec(&self) -> PodSpec {
+    fn container(&self) -> Container {
+        let cfg = super::config::config();
+        Container {
+            command: Some(vec![format!(
+                "-config.file={}",
+                mount_path(&cfg.clone().into())
+            )]),
+            image: Some(self.image.clone()),
+            name: Self::read_name().into(),
+            volume_mounts: Some(vec![mount::map_name(cfg.clone().into())]),
+            ..Default::default()
+        }
+    }
+
+    fn pod_spec(&self, container: Container) -> PodSpec {
         let cfg = super::config::config();
         PodSpec {
             affinity: anti_affinity(Self::read_name()),
-            containers: vec![Container {
-                command: Some(vec![
-                    format!("-config.file={}", mount_path(&cfg.clone().into())),
-                    "-target=read".to_string(),
-                ]),
-                image: Some(self.image.clone()),
-                name: Self::read_name().into(),
-                volume_mounts: Some(vec![mount::map_name(cfg.clone().into())]),
-                ..Default::default()
-            }],
+            containers: vec![container],
             volumes: Some(vec![cfg.into()]),
             ..Default::default()
         }
