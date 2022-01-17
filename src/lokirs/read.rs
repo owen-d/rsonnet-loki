@@ -1,7 +1,8 @@
-use k8s_openapi::api::apps::v1::{self as apps, DeploymentSpec};
+use k8s_openapi::api::apps::v1::{self as apps, Deployment, DeploymentSpec};
 use k8s_openapi::api::core::v1::{ConfigMap, PodTemplateSpec, Service, ServicePort, ServiceSpec};
 use k8s_openapi::api::core::v1::{Container, PodSpec};
 
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 
 use crate::builtin::configmap::with_config_hash;
@@ -29,17 +30,24 @@ impl Reads {
     fn name() -> Name {
         Name::new(READ_NAME.to_string())
     }
+    pub fn deployment(&self) -> Deployment {
+        Deployment {
+            metadata: Self::name().into(),
+            spec: self.deployment_spec().into(),
+            ..Default::default()
+        }
+    }
     pub fn deployment_spec(&self) -> DeploymentSpec {
         let pod_template = with_config_hash(
+            vec![super::config::config()],
             PodTemplateSpec {
                 metadata: Some(Self::name().into()),
                 spec: self.pod_spec().into(),
             },
-            vec![super::config::config().into()],
         );
         apps::DeploymentSpec {
             replicas: Some(self.replicas),
-            selector: Reads::name().get(),
+            selector: Reads::name().into(),
             strategy: Some(apps::DeploymentStrategy {
                 rolling_update: Some(apps::RollingUpdateDeployment {
                     max_unavailable: Some(IntOrString::String("10%".to_string())),
@@ -61,10 +69,8 @@ impl Reads {
             affinity: anti_affinity(Reads::name()),
             containers: vec![Container {
                 command: Some(vec![
-                    "--config.file".to_string(),
-                    mount_path(&cfg.clone().into()),
-                    "--target".to_string(),
-                    "read".to_string(),
+                    format!("-config.file={}", mount_path(&cfg.clone().into())),
+                    "-target=read".to_string(),
                 ]),
                 image: Some(self.image.clone()),
                 name: Self::name().into(),
@@ -77,11 +83,11 @@ impl Reads {
     }
 
     pub fn svc(&self) -> Service {
+        let sel: LabelSelector = Self::name().into();
         Service {
             metadata: Self::name().into(),
             spec: Some(ServiceSpec {
                 cluster_ip: "".to_string().into(),
-                type_: Some("ClusterIP".to_string()),
                 ports: Some(vec![
                     ServicePort {
                         name: format!("{}-http", Self::name().0).into(),
@@ -98,7 +104,8 @@ impl Reads {
                         ..Default::default()
                     },
                 ]),
-                selector: Self::name().get().match_labels,
+                selector: sel.match_labels,
+                type_: Some("ClusterIP".to_string()),
                 ..Default::default()
             }),
             ..Default::default()

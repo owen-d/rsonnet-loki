@@ -1,7 +1,7 @@
 use super::conventions::{Has, With};
 use derive_more::{From, Into};
 use k8s_openapi::api::core::v1::PodTemplateSpec;
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta};
 use maplit::btreemap;
 
 impl<T> Has<ObjectMeta> for T
@@ -38,9 +38,17 @@ impl Name {
     pub fn key() -> String {
         "name".to_string()
     }
+}
 
-    pub(crate) fn get(&self) -> k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector {
-        todo!()
+impl From<Name> for LabelSelector {
+    fn from(n: Name) -> Self {
+        LabelSelector {
+            match_labels: btreemap! {
+                Name::key() => n.0,
+            }
+            .into(),
+            ..Default::default()
+        }
     }
 }
 

@@ -1,5 +1,8 @@
 use rsonnet_loki::*;
 
 fn main() {
-    lokirs::todo();
+    let x = lokirs::libmain::main().err();
+    if let Some(e) = x {
+        format!("{}", e);
+    }
 }

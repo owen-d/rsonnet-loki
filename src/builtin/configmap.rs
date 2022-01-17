@@ -5,7 +5,7 @@ use derive_more::{From, Into};
 use k8s_openapi::api::core::v1::{ConfigMap, ConfigMapVolumeSource, Volume};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use std::collections::hash_map::DefaultHasher;
-use std::collections::HashMap;
+
 use std::hash::{Hash, Hasher};
 
 pub const CONFIG_HASH_ANNOTATION: &str = "config_hash";
@@ -24,34 +24,12 @@ where
     }
 }
 
-pub fn with_config_hash<A, B>(x: A, cfgs: B) -> A
+pub fn with_config_hash<T>(cfgs: Vec<HashableConfigMap>, x: T) -> T
 where
-    A: Has<Vec<ConfigMapVolumeSource>> + With<ObjectMeta>,
-    B: Has<Vec<ConfigMap>>,
+    T: Has<ObjectMeta> + With<ObjectMeta>,
 {
-    let sources: Vec<ConfigMapVolumeSource> = x.get().unwrap_or_default();
-    let mut tmp: HashMap<String, Option<ConfigMap>> = HashMap::from_iter(
-        sources
-            .into_iter()
-            .map(|source: ConfigMapVolumeSource| (source.name.unwrap_or_default(), None))
-            .collect::<Vec<_>>(),
-    );
-    // intersect referenced and provided configmaps
-    for cfg in cfgs.get().unwrap_or_default() {
-        let key = cfg.metadata.name.clone().unwrap_or_default();
-        if tmp.contains_key(&key) {
-            tmp.insert(key, Some(cfg));
-        }
-    }
-
-    let intersection: Vec<HashableConfigMap> = tmp
-        .into_iter()
-        .filter_map(|(_, v)| v.map(HashableConfigMap))
-        .collect();
-
-    // hash them all
     let h = &mut DefaultHasher::new();
-    intersection.hash(h);
+    cfgs.hash(h);
     let hash = h.finish();
 
     let ls = x

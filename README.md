@@ -13,6 +13,9 @@ env vars
 Specification is _cheap_; don't mess with mutability we don't need. Much of this library is built on top
 of the `Has<T>` and `With<T>` traits.
 
+In general, use `Has<T>` when you want an `Option<T>` and `From<T>` when you want `<T>`.
+I probably should have named that `Might<T>`...
+
 
 ### Modules
 
