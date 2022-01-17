@@ -12,6 +12,10 @@ where
     x.with(vs.get().unwrap_or_default().into_iter().map(f).collect())
 }
 
+pub fn mount_path(v: &Volume) -> String {
+    format!("/etc/volumes/{}", v.name)
+}
+
 /// mount mounts volumes into a type with volume mounts at the path `/etc/volumes/${volume}`
 pub fn mount<A: Has<Volumes>, B: With<VolumeMounts>>(vs: A, x: B) -> B {
     mount_with(map_name, vs, x)
@@ -21,7 +25,7 @@ pub fn mount<A: Has<Volumes>, B: With<VolumeMounts>>(vs: A, x: B) -> B {
 /// i.e. a container. It mounts into `/etc/volumes/<name>`
 pub fn map_name(v: Volume) -> VolumeMount {
     VolumeMount {
-        mount_path: format!("/etc/volumes/{}", v.name),
+        mount_path: mount_path(&v),
         name: v.name,
         ..Default::default()
     }
@@ -37,7 +41,7 @@ mod tests {
     fn test_mount() {
         let c: Container = Default::default();
         let vs = vec![Volume {
-            name: format!("foo"),
+            name: "foo".to_string(),
             ..Default::default()
         }];
 
@@ -46,7 +50,7 @@ mod tests {
             .map(|ms| ms.into_iter().map(|m| (m.mount_path, m.name)).collect());
 
         assert_eq!(
-            vec![(format!("/etc/volumes/foo"), format!("foo"))],
+            vec![("/etc/volumes/foo".to_string(), "foo".to_string())],
             kvs.unwrap(),
         )
     }

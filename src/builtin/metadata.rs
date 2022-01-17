@@ -28,7 +28,7 @@ where
 // Name corresponds to the labelset ("name", <component>),
 // which is used to determine the component. This is then
 // used to to do things such bootstrap as anti-affinity rules.
-#[derive(PartialEq, From, Into, Clone, Default)]
+#[derive(PartialEq, From, Into, Clone, Default, Debug)]
 pub struct Name(String);
 
 impl Name {
@@ -95,7 +95,7 @@ mod tests {
     #[test]
     fn test_name_roundtrip() {
         let tpl: PodTemplateSpec = Default::default();
-        let seeded = tpl.with("foo".to_string() as Name);
-        assert_eq!(Some("foo".to_string()), seeded.get());
+        let seeded = tpl.with(Name::new("foo".to_string()));
+        assert_eq!(Some(Name::new("foo".to_string())), seeded.get());
     }
 }

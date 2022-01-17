@@ -59,8 +59,9 @@ mod tests {
     #[test]
     fn pod_anti_affinity() {
         let def: PodTemplateSpec = Default::default();
-        let pt = def.with("ingester".to_string() as Name);
+        let n = Name::new("ingester".to_string());
+        let pt = def.with(n.clone());
         let x = super::self_anti_affinity(pt);
-        assert_eq!(Some("ingester".to_string()), x.get());
+        assert_eq!(Some(n), x.get());
     }
 }
