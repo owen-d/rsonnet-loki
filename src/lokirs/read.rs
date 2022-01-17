@@ -1,11 +1,11 @@
 use k8s_openapi::api::apps::v1::{self as apps, DeploymentSpec};
-use k8s_openapi::api::core::v1::PodTemplateSpec;
+use k8s_openapi::api::core::v1::{ConfigMap, PodTemplateSpec, Service, ServicePort, ServiceSpec};
 use k8s_openapi::api::core::v1::{Container, PodSpec};
 
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 
-use crate::builtin::configmap::{with_config_hash};
-use crate::builtin::{Name};
+use crate::builtin::configmap::with_config_hash;
+use crate::builtin::Name;
 use crate::paras::affinity::anti_affinity;
 use crate::paras::mount::{self, mount_path};
 
@@ -51,8 +51,9 @@ impl Reads {
             ..Default::default()
         }
     }
-
-    // pub fn config_map(&self) -> HashableConfigMap {}
+    pub fn config_map(&self) -> ConfigMap {
+        super::config::config().into()
+    }
 
     fn pod_spec(&self) -> PodSpec {
         let cfg = super::config::config();
@@ -71,6 +72,35 @@ impl Reads {
                 ..Default::default()
             }],
             volumes: Some(vec![cfg.into()]),
+            ..Default::default()
+        }
+    }
+
+    pub fn svc(&self) -> Service {
+        Service {
+            metadata: Self::name().into(),
+            spec: Some(ServiceSpec {
+                cluster_ip: "".to_string().into(),
+                type_: Some("ClusterIP".to_string()),
+                ports: Some(vec![
+                    ServicePort {
+                        name: format!("{}-http", Self::name().0).into(),
+                        port: 3100,
+                        target_port: IntOrString::Int(3100).into(),
+                        protocol: Some("tcp".to_string()),
+                        ..Default::default()
+                    },
+                    ServicePort {
+                        name: format!("{}-grpc", Self::name().0).into(),
+                        port: 9095,
+                        target_port: IntOrString::Int(9095).into(),
+                        protocol: Some("tcp".to_string()),
+                        ..Default::default()
+                    },
+                ]),
+                selector: Self::name().get().match_labels,
+                ..Default::default()
+            }),
             ..Default::default()
         }
     }

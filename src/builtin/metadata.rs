@@ -29,7 +29,7 @@ where
 // which is used to determine the component. This is then
 // used to to do things such bootstrap as anti-affinity rules.
 #[derive(PartialEq, From, Into, Clone, Default, Debug)]
-pub struct Name(String);
+pub struct Name(pub String);
 
 impl Name {
     pub fn new(x: String) -> Self {
