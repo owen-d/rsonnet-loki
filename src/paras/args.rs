@@ -1,3 +1,5 @@
+use std::fmt;
+
 use k8s_openapi::api::core::v1::Container;
 
 use crate::builtin::{Has, With};
@@ -10,10 +12,6 @@ impl Target {
         Target(x)
     }
 
-    pub fn to_string(&self) -> String {
-        format!("-target={}", self.0)
-    }
-
     /// Detect whether subject is a target
     pub fn is(s: &str) -> Option<Target> {
         // match `--target` and `-target`
@@ -22,6 +20,12 @@ impl Target {
             return None;
         }
         Some(Self::new(trimmed.trim_start_matches("target=").to_string()))
+    }
+}
+
+impl fmt::Display for Target {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "-target={}", self.0)
     }
 }
 

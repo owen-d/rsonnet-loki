@@ -1,10 +1,10 @@
 use k8s_openapi::api::apps::v1::{
     Deployment, DeploymentSpec, DeploymentStrategy, RollingUpdateDeployment,
 };
-use k8s_openapi::api::core::v1::{ConfigMap, PodTemplateSpec, Service, ServicePort, ServiceSpec};
+use k8s_openapi::api::core::v1::{ConfigMap, PodTemplateSpec, Service};
 use k8s_openapi::api::core::v1::{Container, PodSpec};
 
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
+
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 
 use crate::builtin::configmap::with_config_hash;
@@ -12,6 +12,7 @@ use crate::builtin::{Name, With};
 use crate::paras::affinity::anti_affinity;
 use crate::paras::args::Target;
 use crate::paras::mount::{self, mount_path};
+use crate::paras::svc::cluster_ip;
 
 pub const READ_NAME: &str = "read";
 pub const WRITE_NAME: &str = "write";
@@ -83,7 +84,7 @@ impl SSD {
             )]),
             image: Some(self.image.clone()),
             name: Self::read_name().into(),
-            volume_mounts: Some(vec![mount::map_name(cfg.clone().into())]),
+            volume_mounts: Some(vec![mount::map_name(cfg.into())]),
             ..Default::default()
         }
     }
@@ -99,32 +100,10 @@ impl SSD {
     }
 
     pub fn read_svc(&self) -> Service {
-        let sel: LabelSelector = Self::read_name().into();
-        Service {
-            metadata: Self::read_name().into(),
-            spec: Some(ServiceSpec {
-                cluster_ip: "".to_string().into(),
-                ports: Some(vec![
-                    ServicePort {
-                        name: format!("{}-http", Self::read_name().0).into(),
-                        port: 3100,
-                        target_port: IntOrString::Int(3100).into(),
-                        protocol: Some("tcp".to_string()),
-                        ..Default::default()
-                    },
-                    ServicePort {
-                        name: format!("{}-grpc", Self::read_name().0).into(),
-                        port: 9095,
-                        target_port: IntOrString::Int(9095).into(),
-                        protocol: Some("tcp".to_string()),
-                        ..Default::default()
-                    },
-                ]),
-                selector: sel.match_labels,
-                type_: Some("ClusterIP".to_string()),
-                ..Default::default()
-            }),
-            ..Default::default()
-        }
+        cluster_ip(Self::read_name())
+    }
+
+    pub fn write_svc(&self) -> Service {
+        cluster_ip(Self::write_name())
     }
 }
