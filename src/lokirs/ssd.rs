@@ -2,7 +2,7 @@ use k8s_openapi::api::apps::v1::{
     Deployment, DeploymentSpec, DeploymentStrategy, RollingUpdateDeployment, StatefulSet,
     StatefulSetSpec,
 };
-use k8s_openapi::api::core::v1::{ConfigMap, PodTemplateSpec, Service, VolumeMount};
+use k8s_openapi::api::core::v1::{ConfigMap, PodTemplateSpec, Service};
 use k8s_openapi::api::core::v1::{Container, PodSpec};
 
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
@@ -86,7 +86,7 @@ impl SSD {
         Container {
             command: Some(vec![format!(
                 "-config.file={}/config.yaml",
-                mount_path(&cfg.clone().into())
+                mount_path(&cfg.into())
             )]),
             image: Some(self.image.clone()),
             name: Self::read_name().into(),
