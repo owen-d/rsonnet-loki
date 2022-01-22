@@ -11,5 +11,7 @@ pub fn main() -> Result<()> {
     ssd.read_svc().serialize(&mut serializer)?;
     ssd.config_map().serialize(&mut serializer)?;
     ssd.read_deployment().serialize(&mut serializer)?;
+    ssd.write_svc().serialize(&mut serializer)?;
+    ssd.write_sts().serialize(&mut serializer)?;
     Ok(())
 }

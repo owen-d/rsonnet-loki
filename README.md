@@ -34,3 +34,6 @@ There are concepts built on top of the primitives. They can be used to overlay t
 #### lokirs
 
 This is an example usage of the library which creates a Loki deployment
+
+## Notes
+Is it preferrable to use conventions to wrap structures externally? We could `with_config_hash` any `T: Has<ConfigMap> + Has<Name> + With<ConfigMap>`, etc. Then, we'd only need to specify this extra code (or remember to specify it at all!) _once_ at the end.
