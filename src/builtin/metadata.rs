@@ -1,6 +1,6 @@
 use super::conventions::{Has, With};
 use derive_more::{From, Into};
-use k8s_openapi::api::core::v1::PodTemplateSpec;
+use k8s_openapi::api::core::v1::{PodTemplateSpec, Volume};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta};
 use maplit::btreemap;
 
@@ -35,6 +35,9 @@ impl Name {
     pub fn new(x: String) -> Self {
         Self(x)
     }
+    pub fn to_string(self) -> String {
+        self.0
+    }
     pub fn key() -> String {
         "name".to_string()
     }
@@ -61,6 +64,12 @@ impl From<Name> for ObjectMeta {
             name: Some(String::from(x)),
             ..Default::default()
         }
+    }
+}
+
+impl From<Volume> for Name {
+    fn from(v: Volume) -> Self {
+        Self::new(v.name)
     }
 }
 

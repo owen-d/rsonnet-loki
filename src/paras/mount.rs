@@ -1,6 +1,6 @@
 use k8s_openapi::api::core::v1::{Volume, VolumeMount};
 
-use crate::builtin::{Has, VolumeMounts, Volumes, With};
+use crate::builtin::{Has, Name, VolumeMounts, Volumes, With};
 
 /// Specify a volume should be mounted into the following container.
 fn mount_with<F, A, B>(f: F, vs: A, x: B) -> B
@@ -12,22 +12,28 @@ where
     x.with(vs.get().unwrap_or_default().into_iter().map(f).collect())
 }
 
-pub fn mount_path(v: &Volume) -> String {
-    format!("/etc/volumes/{}", v.name)
+pub fn mount_path(n: Name) -> String {
+    format!("/etc/volumes/{}", n.to_string())
 }
 
 /// mount mounts volumes into a type with volume mounts at the path `/etc/volumes/${volume}`
 pub fn mount<A: Has<Volumes>, B: With<VolumeMounts>>(vs: A, x: B) -> B {
-    mount_with(map_name, vs, x)
+    mount_with(|v| mount_name(Name::new(v.name)), vs, x)
 }
 
-/// map_name maps a volume into a volumemount for use with
+/// mount_name maps a volume into a volumemount for use with
 /// i.e. a container. It mounts into `/etc/volumes/<name>`
-pub fn map_name(v: Volume) -> VolumeMount {
+pub fn mount_name(n: Name) -> VolumeMount {
     VolumeMount {
-        mount_path: mount_path(&v),
-        name: v.name,
+        mount_path: mount_path(n.clone()),
+        name: n.into(),
         ..Default::default()
+    }
+}
+
+impl From<VolumeMount> for Name {
+    fn from(v: VolumeMount) -> Self {
+        Self(v.name)
     }
 }
 

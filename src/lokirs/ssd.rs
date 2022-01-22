@@ -2,10 +2,15 @@ use k8s_openapi::api::apps::v1::{
     Deployment, DeploymentSpec, DeploymentStrategy, RollingUpdateDeployment, StatefulSet,
     StatefulSetSpec,
 };
-use k8s_openapi::api::core::v1::{ConfigMap, PodTemplateSpec, Service};
+use k8s_openapi::api::core::v1::{
+    ConfigMap, PersistentVolumeClaim, PersistentVolumeClaimSpec, PodTemplateSpec,
+    ResourceRequirements, Service, Volume,
+};
 use k8s_openapi::api::core::v1::{Container, PodSpec};
 
+use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
+use maplit::btreemap;
 
 use crate::builtin::configmap::with_config_hash;
 use crate::builtin::{Name, VolumeMounts, With};
@@ -79,14 +84,16 @@ impl SSD {
 
     fn container(&self, extra_mounts: Option<VolumeMounts>) -> Container {
         let cfg = super::config::config();
-        let mut mounts = vec![mount::map_name(cfg.clone().into())];
+        let cfg_v: Volume = cfg.into();
+        let n: Name = cfg_v.into();
+        let mut mounts = vec![mount::mount_name(n.clone())];
         if let Some(extra) = extra_mounts {
             mounts.extend(extra);
         }
         Container {
             command: Some(vec![format!(
                 "-config.file={}/config.yaml",
-                mount_path(&cfg.into())
+                mount_path(n)
             )]),
             image: Some(self.image.clone()),
             name: Self::read_name().into(),
@@ -114,6 +121,22 @@ impl SSD {
     }
 
     pub fn write_sts(&self) -> StatefulSet {
+        let data = Name::new("data".to_string());
+        let pvc = PersistentVolumeClaim {
+            metadata: data.to_owned().into(),
+            spec: Some(PersistentVolumeClaimSpec {
+                access_modes: vec!["ReadWriteOnce".to_string()].into(),
+                storage_class_name: Some("fast".to_string()),
+                resources: Some(ResourceRequirements {
+                    requests: Some(btreemap! {
+                        "storage".to_string() => Quantity("100Gi".to_string()),
+                    }),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
         let pod_template = with_config_hash(
             vec![super::config::config()],
             PodTemplateSpec {
@@ -121,7 +144,7 @@ impl SSD {
                 spec: self
                     .pod_spec(
                         Self::write_name(),
-                        self.container(None)
+                        self.container(Some(vec![mount::mount_name(data)]))
                             .with(Target::new(Self::write_name().into())), // Add write target
                     )
                     .into(),
@@ -135,6 +158,7 @@ impl SSD {
                 selector: Self::write_name().into(),
                 service_name: Self::write_name().into(),
                 template: pod_template,
+                volume_claim_templates: Some(vec![pvc]),
                 ..Default::default()
             }),
             ..Default::default()
