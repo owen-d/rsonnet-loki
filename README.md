@@ -37,3 +37,9 @@ This is an example usage of the library which creates a Loki deployment
 
 ## Notes
 Is it preferrable to use conventions to wrap structures externally? We could `with_config_hash` any `T: Has<ConfigMap> + Has<Name> + With<ConfigMap>`, etc. Then, we'd only need to specify this extra code (or remember to specify it at all!) _once_ at the end.
+  * Good demo
+    * `Derive(Has<T>)` when a field matches
+    * PrimitiveStream rewrite, i.e. config hash all `Has<Vec<ConfigMap>>` that are output by the program without ever having to specify it.
+      * Show how to define this behavior and test for it
+    * PrimitiveStream validation, i.e. ensure the combined requests or limits for a pod exceed the node resources for a particular machine class.
+      * show how to define this behavior and test for it.
