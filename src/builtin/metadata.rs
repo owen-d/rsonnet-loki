@@ -35,11 +35,15 @@ impl Name {
     pub fn new(x: String) -> Self {
         Self(x)
     }
-    pub fn to_string(self) -> String {
-        self.0
-    }
+
     pub fn key() -> String {
         "name".to_string()
+    }
+}
+
+impl std::fmt::Display for Name {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
