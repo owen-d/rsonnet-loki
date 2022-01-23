@@ -76,12 +76,13 @@ where
             .or_else(|| Some(Default::default()))
             .map(|ls| {
                 let mut res = ls;
-                res.extend([(Name::key(), x.into())]);
+                res.extend([(Name::key(), x.clone().into())]);
                 res
             });
 
         self.with(ObjectMeta {
             labels: ls,
+            name: Some(x.to_string()),
             ..self.get().unwrap_or_default()
         })
     }
