@@ -2,8 +2,9 @@ use k8s_openapi::api::{
     apps::v1::{Deployment, StatefulSet},
     core::v1::{ConfigMap, Service},
 };
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum Resource {
     Sts(StatefulSet),
     Deploy(Deployment),

@@ -1,32 +1,30 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
-// use serde::Serialize;
-// use std::io;
+use serde::Serialize;
+use std::io;
 
-// use super::ssd;
+use super::ssd;
 use crate::{
     paras::{resource::Resource, valid::Validation},
     validate,
 };
 
 pub fn main() -> Result<()> {
-    // let mut serializer = serde_yaml::Serializer::new(io::stdout());
-    // let ssd: ssd::SSD = Default::default();
+    let ssd: ssd::SSD = Default::default();
+    let mut r = runner();
 
-    // let resources: Vec<Resource> = vec![
-    //     ssd.read_svc().into(),
-    //     ssd.config_map().into(),
-    //     ssd.read_deployment().into(),
-    //     ssd.write_svc().into(),
-    //     ssd.write_sts().into(),
-    // ];
+    let resources: Vec<Resource> = vec![
+        ssd.read_svc().into(),
+        ssd.config_map().into(),
+        ssd.read_deployment().into(),
+        ssd.write_svc().into(),
+        ssd.write_sts().into(),
+    ];
+    for resource in resources.into_iter() {
+        r.push_resource(resource);
+    }
 
-    // ssd.read_svc().serialize(&mut serializer)?;
-    // ssd.config_map().serialize(&mut serializer)?;
-    // ssd.read_deployment().serialize(&mut serializer)?;
-    // ssd.write_svc().serialize(&mut serializer)?;
-    // ssd.write_sts().serialize(&mut serializer)?;
-    Ok(())
+    r.run()
 }
 
 pub fn runner() -> Runner {
@@ -58,7 +56,7 @@ impl Runner {
         self.validations.push(v)
     }
 
-    pub fn run(&mut self) -> bool {
+    pub fn validate(&self) -> bool {
         for r in &self.rs {
             for v in &self.validations {
                 if !v(r) {
@@ -67,5 +65,18 @@ impl Runner {
             }
         }
         true
+    }
+
+    pub fn run(&self) -> Result<()> {
+        let mut serializer = serde_yaml::Serializer::new(io::stdout());
+        if !self.validate() {
+            bail!("error validating");
+        }
+
+        for r in &self.rs {
+            r.serialize(&mut serializer)?;
+        }
+
+        Ok(())
     }
 }
