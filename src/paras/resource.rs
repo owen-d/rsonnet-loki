@@ -9,6 +9,9 @@ pub enum Resource {
     Deploy(Deployment),
     Svc(Service),
     CfgMap(ConfigMap),
+    // Intended to be unused. This helps prevent unreachable errors by having a nonsense constructor
+    // to match against when validate! macros act on all legitimate resource types.
+    Nothing,
 }
 
 impl From<StatefulSet> for Resource {

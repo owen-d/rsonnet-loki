@@ -31,7 +31,13 @@ pub fn main() -> Result<()> {
 
 pub fn runner() -> Runner {
     let mut r: Runner = Default::default();
-    for v in vec![validate!(|x: &ObjectMeta| x.name.is_some(), Deploy)] {
+    for v in vec![validate!(
+        |x: &ObjectMeta| x.name.is_some(),
+        Deploy,
+        Sts,
+        Svc,
+        CfgMap
+    )] {
         r.push_validation(v);
     }
     r
