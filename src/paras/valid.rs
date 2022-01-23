@@ -1,10 +1,11 @@
 use super::conventions::HasMany;
 
+#[macro_export]
 macro_rules! validate {
     ( $validation: expr, $($constructor:ident ),+ ) => {
         {
             use $crate::paras::resource::Resource;
-            |r: Resource| {
+            |r: &Resource| {
                 match r {
                     $(
                         Resource::$constructor(val) => val.validate($validation),
@@ -17,17 +18,17 @@ macro_rules! validate {
     };
 }
 
-pub trait Validate<T, F: Fn(T) -> bool> {
+pub trait Validation<T, F: Fn(&T) -> bool> {
     fn validate(&self, f: F) -> bool;
 }
 
-impl<A, B, F> Validate<A, F> for B
+impl<A, B, F> Validation<A, F> for B
 where
     B: HasMany<A>,
-    F: Fn(A) -> bool,
+    F: Fn(&A) -> bool,
 {
     fn validate(&self, f: F) -> bool {
-        self.get_all().unwrap_or_default().into_iter().all(f)
+        self.get_all().unwrap_or_default().iter().all(f)
     }
 }
 
@@ -42,7 +43,7 @@ mod tests {
 
     #[test]
     fn test_validate() {
-        let no_name = |x: ObjectMeta| x.name.is_none();
+        let no_name = |x: &ObjectMeta| x.name.is_none();
         let pt: PodTemplateSpec = Default::default();
         let altered = pt.with(Name::new("foo".to_string()));
 
@@ -52,7 +53,7 @@ mod tests {
 
     #[test]
     fn test_validate_macro() {
-        let no_name = |x: ObjectMeta| x.name.is_none();
+        let no_name = |x: &ObjectMeta| x.name.is_none();
         let _v = validate!(no_name, Deploy, Sts);
     }
 }

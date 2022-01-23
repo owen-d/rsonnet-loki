@@ -3,6 +3,7 @@ use k8s_openapi::api::{
     core::v1::{ConfigMap, Service},
 };
 
+#[derive(Clone)]
 pub enum Resource {
     Sts(StatefulSet),
     Deploy(Deployment),
