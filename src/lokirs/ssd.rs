@@ -18,6 +18,7 @@ use crate::paras::affinity::anti_affinity;
 use crate::paras::args::Target;
 use crate::paras::conventions::{Name, With};
 use crate::paras::mount::{self, mount_path};
+use crate::paras::resource::Resource;
 use crate::paras::svc::cluster_ip;
 
 pub const READ_NAME: &str = "read";
@@ -161,5 +162,15 @@ impl SSD {
             }),
             ..Default::default()
         }
+    }
+
+    pub fn resources(&self) -> Vec<Resource> {
+        vec![
+            self.read_svc().into(),
+            self.config_map().into(),
+            self.read_deployment().into(),
+            self.write_svc().into(),
+            self.write_sts().into(),
+        ]
     }
 }

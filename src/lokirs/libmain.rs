@@ -13,14 +13,7 @@ pub fn main() -> Result<()> {
     let ssd: ssd::SSD = Default::default();
     let mut r = runner();
 
-    let resources: Vec<Resource> = vec![
-        ssd.read_svc().into(),
-        ssd.config_map().into(),
-        ssd.read_deployment().into(),
-        ssd.write_svc().into(),
-        ssd.write_sts().into(),
-    ];
-    for resource in resources.into_iter() {
+    for resource in ssd.resources().into_iter() {
         r.push_resource(resource);
     }
 
@@ -31,10 +24,10 @@ pub fn runner() -> Runner {
     let mut r: Runner = Default::default();
     for v in vec![validate!(
         |x: &ObjectMeta| x.name.is_some(),
-        Deploy,
-        Sts,
-        Svc,
-        CfgMap
+        Deployment,
+        StatefulSet,
+        Service,
+        ConfigMap
     )] {
         r.push_validation(v);
     }

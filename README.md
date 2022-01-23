@@ -47,3 +47,13 @@ This is an example usage of the library which creates a Loki deployment
     * show how to define this behavior and test for it.
   * Load a manifest dump and apply validations.
 * idea: should we get rid of `Has<T>` and use `From` and `TryFrom` instead?
+
+## TODO
+- Validations to return `Option<Error>`
+- mapping fns prior to validations
+  - Configmaps should have hash annotations
+  - everything should use name labels
+  - use anti-affinity everywhere
+  - no two volumes can have the same name
+- opt-out for config hashing when the configmap is intended to live-reload.
+  - Do this with metadata, similar to `Name`?

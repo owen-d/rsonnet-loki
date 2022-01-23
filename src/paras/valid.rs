@@ -54,6 +54,6 @@ mod tests {
     #[test]
     fn test_validate_macro() {
         let no_name = |x: &ObjectMeta| x.name.is_none();
-        let _v = validate!(no_name, Deploy, Sts);
+        let _v = validate!(no_name, Deployment, StatefulSet);
     }
 }
