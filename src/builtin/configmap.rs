@@ -1,6 +1,6 @@
-use super::conventions::{Has, With};
+use crate::paras::conventions::{Has, Name, With};
+
 use super::volume::Volumes;
-use super::Name;
 use derive_more::{From, Into};
 use k8s_openapi::api::core::v1::{ConfigMap, ConfigMapVolumeSource, Volume};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;

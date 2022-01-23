@@ -2,7 +2,7 @@ use std::fmt;
 
 use k8s_openapi::api::core::v1::Container;
 
-use crate::builtin::{Has, With};
+use super::conventions::{Has, With};
 
 /// Target is used for subcomponent selection and explicitly maps to the `-target=<target>` CLI flag.
 #[derive(PartialEq, Clone, Default, Debug)]

@@ -1,18 +1,4 @@
-pub trait Has<T> {
-    fn get(&self) -> Option<T>;
-}
-
-impl<T: Clone> Has<T> for T {
-    fn get(&self) -> Option<T> {
-        Some(self.clone())
-    }
-}
-
-impl<T: Clone> Has<T> for Option<T> {
-    fn get(&self) -> Self {
-        self.clone()
-    }
-}
+use super::Has;
 
 pub trait With<T>
 where

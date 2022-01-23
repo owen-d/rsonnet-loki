@@ -1,7 +1,8 @@
 use k8s_openapi::api::core::v1::ConfigMap;
 use maplit::btreemap;
 
-use crate::builtin::{configmap::HashableConfigMap, Name};
+use crate::builtin::configmap::HashableConfigMap;
+use crate::paras::conventions::Name;
 
 pub const DEFAULT_CONFIG: &str = "
 auth_enabled: false

@@ -1,4 +1,4 @@
-use super::conventions::{Has, With};
+use crate::paras::conventions::{Has, With};
 use k8s_openapi::api::core::v1::{PodSpec, Volume, VolumeMount};
 
 pub type Volumes = Vec<Volume>;

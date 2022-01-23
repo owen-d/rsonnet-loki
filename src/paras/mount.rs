@@ -1,6 +1,7 @@
 use k8s_openapi::api::core::v1::{Volume, VolumeMount};
 
-use crate::builtin::{Has, Name, VolumeMounts, Volumes, With};
+use super::conventions::{Has, Name, With};
+use crate::builtin::{VolumeMounts, Volumes};
 
 /// Specify a volume should be mounted into the following container.
 fn mount_with<F, A, B>(f: F, vs: A, x: B) -> B

@@ -1,5 +1,7 @@
-use super::{Has, Name, VolumeMounts, With};
+use crate::paras::conventions::{Has, Name, With};
 use k8s_openapi::api::core::v1::Container;
+
+use super::VolumeMounts;
 
 impl Has<Name> for Container {
     fn get(&self) -> Option<Name> {

@@ -1,4 +1,4 @@
-use crate::builtin::{Has, Name};
+use super::conventions::{Has, Name};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
 use maplit::btreemap;
 

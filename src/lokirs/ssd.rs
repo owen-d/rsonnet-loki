@@ -13,9 +13,10 @@ use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 use maplit::btreemap;
 
 use crate::builtin::configmap::with_config_hash;
-use crate::builtin::{Name, VolumeMounts, With};
+use crate::builtin::VolumeMounts;
 use crate::paras::affinity::anti_affinity;
 use crate::paras::args::Target;
+use crate::paras::conventions::{Name, With};
 use crate::paras::mount::{self, mount_path};
 use crate::paras::svc::cluster_ip;
 
@@ -91,10 +92,7 @@ impl SSD {
             mounts.extend(extra);
         }
         Container {
-            command: Some(vec![format!(
-                "-config.file={}/config.yaml",
-                mount_path(n)
-            )]),
+            command: Some(vec![format!("-config.file={}/config.yaml", mount_path(n))]),
             image: Some(self.image.clone()),
             name: Self::read_name().into(),
             volume_mounts: Some(mounts),

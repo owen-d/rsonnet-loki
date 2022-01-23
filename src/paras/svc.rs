@@ -1,9 +1,8 @@
+use crate::paras::conventions::Name;
 use k8s_openapi::{
     api::core::v1::{Service, ServicePort, ServiceSpec},
     apimachinery::pkg::{apis::meta::v1::LabelSelector, util::intstr::IntOrString},
 };
-
-use crate::builtin::Name;
 
 pub enum Port {
     Http { port: i32 },

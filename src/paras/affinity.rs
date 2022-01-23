@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::builtin::conventions::{Has, With};
-use crate::builtin::metadata::Name;
+use super::conventions::{Has, Name, With};
 use k8s_openapi::api::core::v1::{self as core, Affinity, PodSpec};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::LabelSelector;
 
