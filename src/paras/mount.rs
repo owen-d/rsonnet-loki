@@ -14,7 +14,7 @@ where
 }
 
 pub fn mount_path(n: Name) -> String {
-    format!("/etc/volumes/{}", n.to_string())
+    format!("/etc/volumes/{}", n)
 }
 
 /// mount mounts volumes into a type with volume mounts at the path `/etc/volumes/${volume}`

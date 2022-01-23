@@ -1,8 +1,21 @@
-use super::{conduit::Resource, conventions::HasMany};
+use super::conventions::HasMany;
 
-// Idea: have a validator take two stages,
-// 1) match correct subresouce types
-// 2) call subresource.validate
+macro_rules! validate {
+    ( $validation: expr, $($constructor:ident ),+ ) => {
+        {
+            use $crate::paras::resource::Resource;
+            |r: Resource| {
+                match r {
+                    $(
+                        Resource::$constructor(val) => val.validate($validation),
+                    )*
+                        _ => true
+                }
+            }
+
+        }
+    };
+}
 
 pub trait Validate<T, F: Fn(T) -> bool> {
     fn validate(&self, f: F) -> bool;
@@ -31,9 +44,15 @@ mod tests {
     fn test_validate() {
         let no_name = |x: ObjectMeta| x.name.is_none();
         let pt: PodTemplateSpec = Default::default();
-        let altered = pt.clone().with(Name::new("foo".to_string()));
+        let altered = pt.with(Name::new("foo".to_string()));
 
-        assert_eq!(true, pt.validate(no_name));
-        assert_eq!(false, altered.validate(no_name));
+        assert!(pt.validate(no_name));
+        assert!(!altered.validate(no_name));
+    }
+
+    #[test]
+    fn test_validate_macro() {
+        let no_name = |x: ObjectMeta| x.name.is_none();
+        let _v = validate!(no_name, Deploy, Sts);
     }
 }

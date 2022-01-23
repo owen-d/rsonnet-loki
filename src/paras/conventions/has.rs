@@ -18,14 +18,11 @@ pub trait HasMany<T> {
     fn get_all(&self) -> Option<Vec<T>>;
 }
 
-impl<A, B> HasMany<A> for Vec<B>
+impl<A, B> HasMany<A> for B
 where
     B: Has<A>,
 {
     fn get_all(&self) -> Option<Vec<A>> {
-        self.into_iter()
-            .filter_map(|x| x.get())
-            .collect::<Vec<A>>()
-            .into()
+        self.get().map(|x| vec![x])
     }
 }
