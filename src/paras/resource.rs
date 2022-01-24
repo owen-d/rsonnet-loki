@@ -50,9 +50,14 @@ impl_fold!(Volume, Volume);
 
 impl Foldable<Object> for Object {
     fn fold(self, f: fn(Object) -> Object) -> Result<Self> {
-        if let Object::PodTemplateSpec(val) = self {
-            return val.fold(f).map(Object::PodTemplateSpec);
+        match self {
+            Object::Resource(_) => bail!("unimplemented"),
+            Object::Container(val) => val.fold(f).map(Into::into),
+            Object::ObjectMeta(val) => val.fold(f).map(Into::into),
+            Object::Pod(val) => val.fold(f).map(Into::into),
+            Object::PodTemplateSpec(val) => val.fold(f).map(Into::into),
+            Object::PodSpec(val) => val.fold(f).map(Into::into),
+            Object::Volume(val) => val.fold(f).map(Into::into),
         }
-        bail!("unimplemented");
     }
 }
