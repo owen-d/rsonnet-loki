@@ -3,6 +3,7 @@ pub mod args;
 pub mod conventions;
 pub mod mapper;
 pub mod mount;
+pub mod object;
 pub mod resource;
 pub mod selection;
 pub mod svc;

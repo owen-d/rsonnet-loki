@@ -1,5 +1,3 @@
-use super::conventions::With;
-
 #[macro_export]
 macro_rules! map_resource {
 	  ( $mapper: expr, $($constructor:ident ),+ ) => {
