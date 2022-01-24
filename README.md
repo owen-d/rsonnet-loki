@@ -49,6 +49,7 @@ This is an example usage of the library which creates a Loki deployment
 * idea: should we get rid of `Has<T>` and use `From` and `TryFrom` instead?
 
 ## TODO
+- Ensure `With<T>` replaces all possible `<T>`s
 - Validations to return `Option<Error>`
 - mapping fns prior to validations
   - Configmaps should have hash annotations

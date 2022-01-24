@@ -19,10 +19,13 @@ where
     }
 
     /// with_default will put a mapped <T> into the relevant place(s),
-    /// applying the function to a default value if the actual entry was missing.
+    /// inserting a default value if the actual entry was missing.
     #[must_use]
-    fn with_default(&self, f: fn(T) -> T, def: T) -> Self {
-        self.with(f(self.get().unwrap_or(def)))
+    fn with_or(&self, f: fn(T) -> T, def: T) -> Self {
+        if let Some(x) = self.get() {
+            return self.with(f(x));
+        }
+        self.with(def)
     }
 }
 
@@ -53,6 +56,6 @@ mod tests {
         let x: Option<i32> = None;
         assert_eq!(Some(1), x.with(1));
         assert_eq!(None, x.with_fn(|x: i32| x + 1));
-        assert_eq!(Some(2), x.with_default(|x| x + 1, 1));
+        assert_eq!(Some(5), x.with_or(|x| x + 1, 5));
     }
 }

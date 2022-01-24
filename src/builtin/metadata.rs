@@ -72,8 +72,9 @@ where
     fn with(&self, x: Name) -> Self {
         let ls = self
             .get()
+            .or(Default::default())
             .and_then(|x: ObjectMeta| x.labels)
-            .or_else(|| Some(Default::default()))
+            .or(Default::default())
             .map(|ls| {
                 let mut res = ls;
                 res.extend([(Name::key(), x.clone().into())]);
