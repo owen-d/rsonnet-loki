@@ -41,7 +41,7 @@ mod tests {
         resource::Resource,
     };
 
-    use super::*;
+    
     use k8s_openapi::{
         api::{apps::v1::Deployment, core::v1::PodTemplateSpec},
         apimachinery::pkg::apis::meta::v1::ObjectMeta,
@@ -60,7 +60,7 @@ mod tests {
 
         // Apply a default, ensuring the default exists
         let overridden = with_altered.with_or(|x| x, n.clone());
-        assert_eq!(Some(n.clone()), overridden.get());
+        assert_eq!(Some(n), overridden.get());
 
         // apply a mapper over the inserted default, ensuring it's applied
         let remapped = overridden.with_fn(|_: Name| Name::new("boo".to_string()));
@@ -69,7 +69,7 @@ mod tests {
 
     #[test]
     fn test_simple_map_resource_macro() {
-        let d: Deployment = Default::default();
+        let _d: Deployment = Default::default();
     }
 
     #[test]

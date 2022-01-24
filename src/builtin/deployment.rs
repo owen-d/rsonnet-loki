@@ -16,7 +16,7 @@ impl With<PodTemplateSpec> for Deployment {
         Deployment {
             spec: self.spec.clone().map(|s: DeploymentSpec| DeploymentSpec {
                 template: x,
-                ..s.clone()
+                ..s
             }),
             ..self.clone()
         }
