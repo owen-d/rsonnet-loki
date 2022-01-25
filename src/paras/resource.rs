@@ -40,13 +40,13 @@ pub enum Object {
     Volume(Volume),
 }
 
-impl_fold!(Resource, Resource);
-impl_fold!(Container, Container);
-impl_fold!(ObjectMeta, ObjectMeta);
-impl_fold!(Pod, Pod);
-impl_fold!(PodTemplateSpec, PodTemplateSpec);
-impl_fold!(PodSpec, PodSpec);
-impl_fold!(Volume, Volume);
+// impl_fold!(Resource, Resource,);
+impl_fold!(Container, Container,);
+impl_fold!(ObjectMeta, ObjectMeta,);
+impl_fold!(Pod, Pod,);
+impl_fold!(PodTemplateSpec, PodTemplateSpec, metadata, spec);
+impl_fold!(PodSpec, PodSpec,);
+impl_fold!(Volume, Volume,);
 
 impl Foldable<Object> for Object {
     fn fold(self, f: fn(Object) -> Object) -> Result<Self> {
@@ -58,6 +58,38 @@ impl Foldable<Object> for Object {
             Object::PodTemplateSpec(val) => val.fold(f).map(Into::into),
             Object::PodSpec(val) => val.fold(f).map(Into::into),
             Object::Volume(val) => val.fold(f).map(Into::into),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_fold_basic() {
+        let f = |x: Object| -> Object {
+            if let Object::PodSpec(v) = x {
+                return PodSpec {
+                    dns_policy: Some("foo".to_string()),
+                    ..v
+                }
+                .into();
+            }
+            x
+        };
+
+        let x = Object::PodTemplateSpec(PodTemplateSpec {
+            spec: Some(Default::default()),
+            ..Default::default()
+        });
+
+        let mapped = x.fold(f).unwrap();
+        if let Object::PodTemplateSpec(p) = mapped {
+            assert_eq!("foo".to_string(), p.spec.unwrap().dns_policy.unwrap())
+        } else {
+            panic!("unexpected variant")
         }
     }
 }

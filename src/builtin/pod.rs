@@ -1,8 +1,4 @@
-
 use crate::paras::conventions::{Has, With};
-
-
-
 use k8s_openapi::api::apps::v1::DeploymentSpec;
 use k8s_openapi::api::core::v1::{PodSpec, PodTemplateSpec};
 
