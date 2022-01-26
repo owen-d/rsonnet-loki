@@ -67,6 +67,14 @@ macro_rules! unexpected_type {
 /// NB: folds are applied in a depth first order, meaning `fold(PodTemplateSpec)` in this case
 /// folds the subfields `metadata` and `spec` first, then applies the mapping function to the
 /// resulting `PodTemplateSpec`.
+/// A more verbose form can also be specified in the case of nested enum constructors:
+/// impl_from_chain!(StatefulSet, Resource, Object); // First ensure From<StatefulSet> for Object
+/// impl_fold!(
+///     StatefulSet,
+///     [Resource::StatefulSet, Object::Resource],
+///     metadata,
+///     spec
+/// );
 #[macro_export]
 macro_rules! impl_fold {
     (@expand $val: pat$(,)?) => {$val};
@@ -77,7 +85,19 @@ macro_rules! impl_fold {
     (@expand $val: pat, $cons: path, $($rest: path),*) => {
         impl_fold!(@expand $cons($val), $($rest,)*)
     };
-    // shortcut for no trailing comma
+
+
+    // shortcut for no trailing comma and no subfields to be folded.
+    ($t: ty, $cons: path) => { impl_fold!($t, $cons,);};
+    // shortcut for only one constructor with a comma and possible subfields.
+    ($t: ty, $cons: path, $( $field: ident ),*) => {
+        impl_fold!($t, [$cons], $($field),*);
+    };
+
+    // This is the main macro. It takes a type, a slice of constructors,
+    // and an optional comma + optional list of subfields to fold. This is
+    // the most verbose form.
+    // $(,)? is a shortcut to match a trailing comma or not
     ($t: ty, [$($cons: path),+]$(,)? $( $field: ident ),*) => {
         impl $crate::paras::fold::Foldable<$crate::paras::resource::Object> for $t {
             fn fold(
@@ -97,24 +117,5 @@ macro_rules! impl_fold {
             }
         }
     };
-    ($t: ty, $cons: ident) => { impl_fold!($t, $cons,);};
-    ($t: ty, $cons: ident, $( $field: ident ),*) => {
-        impl $crate::paras::fold::Foldable<$crate::paras::resource::Object> for $t {
-            fn fold(
-                self,
-                f: fn($crate::paras::resource::Object) -> $crate::paras::resource::Object,
-            ) -> anyhow::Result<Self> {
-                let x = Self {
-                    $(
-                        $field: self.$field.fold(f)?,
-                    )*
-                        ..self
-                };
-                if let $crate::paras::resource::Object::$cons(val) = f(x.into()) {
-                    return Ok(val);
-                }
-                crate::unexpected_type!($t);
-            }
-        }
-    };
+
 }

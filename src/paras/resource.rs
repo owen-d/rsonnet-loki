@@ -75,16 +75,16 @@ pub enum Object {
     ServiceSpec(ServiceSpec),
 }
 
-impl_fold!(Container, [Object::Container]);
-impl_fold!(ObjectMeta, ObjectMeta);
-impl_fold!(Pod, Pod, metadata, spec);
-impl_fold!(PodTemplateSpec, PodTemplateSpec, metadata, spec);
-impl_fold!(PodSpec, PodSpec, containers, affinity, volumes);
-impl_fold!(Volume, Volume);
-impl_fold!(Affinity, Affinity);
-impl_fold!(StatefulSetSpec, StatefulSetSpec, template);
-impl_fold!(DeploymentSpec, DeploymentSpec, template);
-impl_fold!(ServiceSpec, ServiceSpec);
+impl_fold!(Container, Object::Container);
+impl_fold!(ObjectMeta, Object::ObjectMeta);
+impl_fold!(Pod, Object::Pod, metadata, spec);
+impl_fold!(PodTemplateSpec, Object::PodTemplateSpec, metadata, spec);
+impl_fold!(PodSpec, Object::PodSpec, containers, affinity, volumes);
+impl_fold!(Volume, Object::Volume);
+impl_fold!(Affinity, Object::Affinity);
+impl_fold!(StatefulSetSpec, Object::StatefulSetSpec, template);
+impl_fold!(DeploymentSpec, Object::DeploymentSpec, template);
+impl_fold!(ServiceSpec, Object::ServiceSpec);
 
 impl Foldable<Object> for Object {
     fn fold(self, f: fn(Object) -> Object) -> Result<Self> {
