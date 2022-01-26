@@ -75,7 +75,7 @@ pub enum Object {
     ServiceSpec(ServiceSpec),
 }
 
-impl_fold!(Container, Container);
+impl_fold!(Container, [Object::Container]);
 impl_fold!(ObjectMeta, ObjectMeta);
 impl_fold!(Pod, Pod, metadata, spec);
 impl_fold!(PodTemplateSpec, PodTemplateSpec, metadata, spec);

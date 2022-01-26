@@ -69,7 +69,11 @@ macro_rules! unexpected_type {
 /// resulting `PodTemplateSpec`.
 #[macro_export]
 macro_rules! impl_fold {
-    (@expand $val: pat,) => {$val};
+    (@expand $val: pat$(,)?) => {$val};
+    // match no trailing commas
+    (@expand $val: pat, $cons: path) => {
+        impl_fold!(@expand $cons($val),)
+    };
     (@expand $val: pat, $cons: path, $($rest: path),*) => {
         impl_fold!(@expand $cons($val), $($rest,)*)
     };
