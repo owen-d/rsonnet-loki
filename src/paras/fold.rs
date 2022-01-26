@@ -19,6 +19,27 @@ where
     }
 }
 
+impl<A, B> Foldable<A> for Vec<B>
+where
+    B: Foldable<A>,
+{
+    fn fold(self, f: fn(A) -> A) -> Result<Self> {
+        self.into_iter().map(|x| x.fold(f)).collect()
+    }
+}
+
+#[macro_export]
+macro_rules! impl_from_chain {
+    ($src: ty, $interim: ty, $dst: ty) => {
+        impl From<$src> for $dst {
+            fn from(x: $src) -> $dst {
+                let tmp: $interim = x.into();
+                tmp.into()
+            }
+        }
+    };
+}
+
 #[macro_export]
 macro_rules! unexpected_type {
     ($t: ty) => {
@@ -48,6 +69,31 @@ macro_rules! unexpected_type {
 /// resulting `PodTemplateSpec`.
 #[macro_export]
 macro_rules! impl_fold {
+    (@expand $val: pat,) => {$val};
+    (@expand $val: pat, $cons: path, $($rest: path),*) => {
+        impl_fold!(@expand $cons($val), $($rest,)*)
+    };
+    // shortcut for no trailing comma
+    ($t: ty, [$($cons: path),+]$(,)? $( $field: ident ),*) => {
+        impl $crate::paras::fold::Foldable<$crate::paras::resource::Object> for $t {
+            fn fold(
+                self,
+                f: fn($crate::paras::resource::Object) -> $crate::paras::resource::Object,
+            ) -> anyhow::Result<Self> {
+                let x = Self {
+                    $(
+                        $field: self.$field.fold(f)?,
+                    )*
+                        ..self
+                };
+                if let impl_fold!(@expand val, $($cons),*) = f(x.into()) {
+                    return Ok(val);
+                }
+                crate::unexpected_type!($t);
+            }
+        }
+    };
+    ($t: ty, $cons: ident) => { impl_fold!($t, $cons,);};
     ($t: ty, $cons: ident, $( $field: ident ),*) => {
         impl $crate::paras::fold::Foldable<$crate::paras::resource::Object> for $t {
             fn fold(
