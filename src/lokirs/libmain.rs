@@ -1,20 +1,16 @@
-use anyhow::{bail, Result};
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
-use serde::Serialize;
-use std::io;
+use crate::paras::resource::Object;
 
 use super::ssd;
-use crate::{
-    paras::{resource::Resource, valid::Validation},
-    validate,
-};
+use anyhow::{Context, Result};
+use serde::Serialize;
+use std::io;
 
 pub fn main() -> Result<()> {
     let ssd: ssd::SSD = Default::default();
     let mut r = runner();
 
     for resource in ssd.resources().into_iter() {
-        r.push_resource(resource);
+        r.push(resource.into());
     }
 
     r.run()
@@ -22,13 +18,7 @@ pub fn main() -> Result<()> {
 
 pub fn runner() -> Runner {
     let mut r: Runner = Default::default();
-    for v in vec![validate!(
-        |x: &ObjectMeta| x.name.is_some(),
-        Deployment,
-        StatefulSet,
-        Service,
-        ConfigMap
-    )] {
+    for v in vec![] {
         r.push_validation(v);
     }
     r
@@ -36,36 +26,31 @@ pub fn runner() -> Runner {
 
 #[derive(Clone, Default)]
 pub struct Runner {
-    rs: Vec<Resource>,
-    validations: Vec<fn(&Resource) -> bool>,
+    rs: Vec<Object>,
+    validations: Vec<fn(&Object) -> Result<()>>,
 }
 
 impl Runner {
-    pub fn push_resource(&mut self, x: Resource) {
+    pub fn push(&mut self, x: Object) {
         self.rs.push(x)
     }
 
-    pub fn push_validation(&mut self, v: fn(&Resource) -> bool) {
+    pub fn push_validation(&mut self, v: fn(&Object) -> Result<()>) {
         self.validations.push(v)
     }
 
-    pub fn validate(&self) -> bool {
+    pub fn validate(&self) -> Result<()> {
         for r in &self.rs {
             for v in &self.validations {
-                if !v(r) {
-                    return false;
-                }
+                v(r)?;
             }
         }
-        true
+        Ok(())
     }
 
     pub fn run(&self) -> Result<()> {
         let mut serializer = serde_yaml::Serializer::new(io::stdout());
-        if !self.validate() {
-            bail!("error validating");
-        }
-
+        self.validate().context("error validatin")?;
         for r in &self.rs {
             r.serialize(&mut serializer)?;
         }

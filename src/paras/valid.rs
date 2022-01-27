@@ -1,4 +1,4 @@
-use super::conventions::HasMany;
+use anyhow::Result;
 
 #[macro_export]
 macro_rules! validate {
@@ -18,18 +18,8 @@ macro_rules! validate {
     };
 }
 
-pub trait Validation<T, F: Fn(&T) -> bool> {
-    fn validate(&self, f: F) -> bool;
-}
-
-impl<A, B, F> Validation<A, F> for B
-where
-    B: HasMany<A>,
-    F: Fn(&A) -> bool,
-{
-    fn validate(&self, f: F) -> bool {
-        self.get_all().unwrap_or_default().iter().all(f)
-    }
+pub trait Validation {
+    fn validate(&self, f: fn(&Self) -> Result<()>) -> Result<()>;
 }
 
 #[cfg(test)]
