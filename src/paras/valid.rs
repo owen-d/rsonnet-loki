@@ -1,26 +1,17 @@
-use anyhow::Result;
+// use anyhow::Result;
 
-#[macro_export]
-macro_rules! validate {
-    ( $validation: expr, $($constructor:ident ),+ ) => {
-        {
-            use $crate::paras::resource::Resource;
-            |r: &Resource| {
-                match r {
-                    $(
-                        Resource::$constructor(val) => val.validate($validation),
-                    )*
-                        _ => true
-                }
-            }
+// macro to wrap f(&x) -> Result<()> into
+// decons(input) > f(&input)
 
-        }
-    };
-}
+// pub trait Validation {
+//     fn validate(&self, &T) ->
+// }
 
-pub trait Validation {
-    fn validate(&self, f: fn(&Self) -> Result<()>) -> Result<()>;
-}
+// impl Validation for fn(Object) -> Result<Object> where {
+//     fn validate(&self, f: fn(&Self) -> Result<()>) -> Result<()> {
+
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

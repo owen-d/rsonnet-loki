@@ -1,4 +1,4 @@
-use crate::paras::resource::Object;
+use crate::paras::resource::{Object, Resource};
 
 use super::ssd;
 use anyhow::{Context, Result};
@@ -21,6 +21,9 @@ pub fn runner() -> Runner {
     for v in vec![] {
         r.push_validation(v);
     }
+    for m in vec![] {
+        r.push_mapper(m);
+    }
     r
 }
 
@@ -28,15 +31,20 @@ pub fn runner() -> Runner {
 pub struct Runner {
     rs: Vec<Object>,
     validations: Vec<fn(&Object) -> Result<()>>,
+    mappers: Vec<fn(Object) -> Object>,
 }
 
 impl Runner {
-    pub fn push(&mut self, x: Object) {
-        self.rs.push(x)
+    pub fn push(&mut self, x: Resource) {
+        self.rs.push(x.into())
     }
 
     pub fn push_validation(&mut self, v: fn(&Object) -> Result<()>) {
         self.validations.push(v)
+    }
+
+    pub fn push_mapper(&mut self, v: fn(Object) -> Object) {
+        self.mappers.push(v)
     }
 
     pub fn validate(&self) -> Result<()> {
@@ -46,6 +54,20 @@ impl Runner {
             }
         }
         Ok(())
+    }
+
+    pub fn map(&mut self) {
+        self.rs = self
+            .rs
+            .drain(..)
+            .map(|x| {
+                let mut mapped = x;
+                for f in &self.mappers {
+                    mapped = f(mapped)
+                }
+                mapped
+            })
+            .collect();
     }
 
     pub fn run(&self) -> Result<()> {
