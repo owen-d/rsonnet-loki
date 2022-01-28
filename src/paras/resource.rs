@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use derive_more::From;
 use k8s_openapi::{
     api::{
@@ -24,9 +24,17 @@ pub enum Resource {
     Deployment(Deployment),
     Service(Service),
     ConfigMap(ConfigMap),
-    // Intended to be unused. This helps prevent unreachable errors by having a nonsense constructor
-    // to match against when validate! macros act on all legitimate resource types.
-    Nothing,
+}
+
+impl<F: Fn(Object) -> Object> Foldable<Object, F> for Resource {
+    fn fold(self, f: &F) -> Result<Self> {
+        match self {
+            Resource::StatefulSet(val) => val.fold(f).map(Into::into),
+            Resource::Deployment(val) => val.fold(f).map(Into::into),
+            Resource::Service(val) => val.fold(f).map(Into::into),
+            Resource::ConfigMap(val) => val.fold(f).map(Into::into),
+        }
+    }
 }
 
 // sts
@@ -89,7 +97,7 @@ impl_fold!(ServiceSpec, Object::ServiceSpec);
 impl<F: Fn(Object) -> Object> Foldable<Object, F> for Object {
     fn fold(self, f: &F) -> Result<Self> {
         match self {
-            Object::Resource(_) => bail!("unimplemented"),
+            Object::Resource(val) => val.fold(f).map(Into::into),
             Object::Container(val) => val.fold(f).map(Into::into),
             Object::ObjectMeta(val) => val.fold(f).map(Into::into),
             Object::Pod(val) => val.fold(f).map(Into::into),

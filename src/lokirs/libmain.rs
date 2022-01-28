@@ -32,7 +32,7 @@ pub fn main() -> Result<()> {
     // New hotness
     r.push_mapper(map!(
         |mut c: Container| {
-            c.image = Some("grafana/loki:main".to_string());
+            c.image = Some("grafana/loki:oops".to_string());
             c
         },
         Object::Container
