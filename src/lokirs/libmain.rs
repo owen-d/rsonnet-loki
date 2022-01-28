@@ -15,10 +15,6 @@ use std::io;
 pub fn main() -> Result<()> {
     let ssd: ssd::SSD = Default::default();
     let mut r: Runner = Default::default();
-    let f = |mut c: Container| {
-        c.image = Some("grafana/loki:main".to_string());
-        c
-    };
     // Manual way, yuck!
     r.push_mapper(Box::new(|o: Object| {
         if let Object::Container(mut c) = o {
@@ -28,6 +24,10 @@ pub fn main() -> Result<()> {
         o
     }));
     // Much better!
+    let f = |mut c: Container| {
+        c.image = Some("grafana/loki:main".to_string());
+        c
+    };
     r.push_mapper(map!(f, Object::Container));
     // New hotness
     r.push_mapper(map!(
