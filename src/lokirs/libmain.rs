@@ -24,7 +24,13 @@ pub fn runner() -> Runner {
     for v in vec![] {
         r.push_validation(v);
     }
-    for m in vec![|_: Object| -> Object { Object::Resource(Resource::Nothing) }] {
+    for m in vec![|o: Object| {
+        if let Object::Container(mut c) = o {
+            c.image = Some("grafana/loki:main".to_string());
+            return c.into();
+        };
+        o
+    }] {
         r.push_mapper(m);
     }
     r
