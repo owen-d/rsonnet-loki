@@ -6,6 +6,18 @@ macro_rules! map {
         map!(@expand $cons($val))
     };
 
+    ($f: expr, $($cons: path),*) => {
+        {
+            use $crate::paras::resource::Object;
+            let f = move |o: Object| {
+                if let map!(@expand val, $($cons),*) = o {
+                    return $f(val).into()
+                }
+                o
+            };
+            Box::new(f)
+        }
+    };
     ($f: ident, $($cons: path),*) => {
         {
             use $crate::paras::resource::Object;

@@ -29,6 +29,14 @@ pub fn main() -> Result<()> {
     }));
     // Much better!
     r.push_mapper(map!(f, Object::Container));
+    // New hotness
+    r.push_mapper(map!(
+        |mut c: Container| {
+            c.image = Some("grafana/loki:main".to_string());
+            c
+        },
+        Object::Container
+    ));
 
     for resource in ssd.resources().into_iter() {
         r.push(resource.into());
