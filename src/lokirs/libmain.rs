@@ -25,11 +25,15 @@ pub fn main() -> Result<()> {
     }));
     // Much better!
     let f = |mut c: Container| {
-        c.image = Some("grafana/loki:main".to_string());
+        c.image = Some("grafana/loki:oops".to_string());
         c
     };
     r.push_mapper(map!(f, Object::Container));
+
     // New hotness
+    // Any container will have it's image changed, whether
+    // it's embedded in a deployment, statefulset, etc.
+    // This will also work for your own CRDs.
     r.push_mapper(map!(
         |mut c: Container| {
             c.image = Some("grafana/loki:oops".to_string());

@@ -68,6 +68,7 @@ impl From<HashableConfigMap> for Volume {
         let n: Name = x.0.get().unwrap_or_default();
         Volume {
             name: n.into(),
+            config_map: Some(x.into()),
             ..Default::default()
         }
     }
