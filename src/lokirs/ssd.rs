@@ -4,7 +4,7 @@ use k8s_openapi::api::apps::v1::{
 };
 use k8s_openapi::api::core::v1::{
     ConfigMap, PersistentVolumeClaim, PersistentVolumeClaimSpec, PodTemplateSpec,
-    ResourceRequirements, Service, Volume,
+    ResourceRequirements, Service,
 };
 use k8s_openapi::api::core::v1::{Container, PodSpec};
 
@@ -12,12 +12,9 @@ use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 use maplit::btreemap;
 
-use crate::builtin::configmap::with_config_hash;
 use crate::builtin::VolumeMounts;
-use crate::paras::affinity::anti_affinity;
-use crate::paras::args::Target;
-use crate::paras::conventions::{Name, With};
-use crate::paras::mount::{self, mount_path};
+use crate::paras::conventions::Name;
+use crate::paras::mount::{self};
 use crate::paras::resource::Resource;
 use crate::paras::svc::cluster_ip;
 
@@ -48,19 +45,12 @@ impl SSD {
         Name::new(WRITE_NAME.to_string())
     }
     pub fn read_deployment(&self) -> Deployment {
-        let pod_template = with_config_hash(
-            vec![super::config::config()],
-            PodTemplateSpec {
-                metadata: Some(Self::read_name().into()),
-                spec: self
-                    .pod_spec(
-                        Self::read_name(),
-                        self.container(None)
-                            .with(Target::new(Self::read_name().into())), // Add read target
-                    )
-                    .into(),
-            },
-        );
+        let pod_template = PodTemplateSpec {
+            metadata: Some(Self::read_name().into()),
+            // add read target
+            // add configmap
+            ..Default::default()
+        };
         let spec = DeploymentSpec {
             replicas: Some(self.read_replicas),
             selector: Self::read_name().into(),
@@ -85,28 +75,30 @@ impl SSD {
     }
 
     fn container(&self, extra_mounts: Option<VolumeMounts>) -> Container {
-        let cfg = super::config::config();
-        let cfg_v: Volume = cfg.into();
-        let n: Name = cfg_v.into();
-        let mut mounts = vec![mount::mount_name(n.clone())];
-        if let Some(extra) = extra_mounts {
-            mounts.extend(extra);
-        }
+        // TODO: add configmap
+        // let cfg = super::config::config();
+        // let cfg_v: Volume = cfg.into();
+        // let n: Name = cfg_v.into();
+        // let mut mounts = vec![mount::mount_name(n.clone())];
+        // if let Some(extra) = extra_mounts {
+        //     mounts.extend(extra);
+        // }
         Container {
-            command: Some(vec![format!("-config.file={}/config.yaml", mount_path(n))]),
+            // TODO(config arg)
+            // command: Some(vec![format!("-config.file={}/config.yaml", mount_path(n))]),
             image: Some(self.image.clone()),
             name: Self::read_name().into(),
-            volume_mounts: Some(mounts),
+            volume_mounts: extra_mounts,
             ..Default::default()
         }
     }
 
-    fn pod_spec(&self, name: Name, container: Container) -> PodSpec {
-        let cfg = super::config::config();
+    fn pod_spec(&self, _name: Name, container: Container) -> PodSpec {
+        let _cfg = super::config::config();
         PodSpec {
-            affinity: anti_affinity(name),
             containers: vec![container],
-            volumes: Some(vec![cfg.into()]),
+            // TODO: add configmap volume
+            // volumes: Some(vec![cfg.into()]),
             ..Default::default()
         }
     }
@@ -136,19 +128,16 @@ impl SSD {
             }),
             ..Default::default()
         };
-        let pod_template = with_config_hash(
-            vec![super::config::config()],
-            PodTemplateSpec {
-                metadata: Some(Self::write_name().into()),
-                spec: self
-                    .pod_spec(
-                        Self::write_name(),
-                        self.container(Some(vec![mount::mount_name(data)]))
-                            .with(Target::new(Self::write_name().into())), // Add write target
-                    )
-                    .into(),
-            },
-        );
+        let pod_template = PodTemplateSpec {
+            metadata: Some(Self::write_name().into()),
+            spec: self
+                .pod_spec(
+                    Self::write_name(),
+                    // TODO: add write target
+                    self.container(Some(vec![mount::mount_name(data)])),
+                )
+                .into(),
+        };
 
         StatefulSet {
             metadata: Self::write_name().into(),

@@ -5,5 +5,4 @@ pub mod fold;
 pub mod map;
 pub mod mount;
 pub mod resource;
-pub mod selection;
 pub mod svc;

@@ -43,7 +43,7 @@ pub fn main() -> Result<()> {
     ));
 
     for resource in ssd.resources().into_iter() {
-        r.push(resource.into());
+        r.push(resource);
     }
 
     r.run()

@@ -1,3 +1,5 @@
+use super::fold::Foldable;
+use crate::{impl_fold, impl_from_chain};
 use anyhow::Result;
 use derive_more::From;
 use k8s_openapi::{
@@ -11,10 +13,6 @@ use k8s_openapi::{
     apimachinery::pkg::apis::meta::v1::ObjectMeta,
 };
 use serde::{Deserialize, Serialize};
-
-use crate::{impl_fold, impl_from_chain};
-
-use super::fold::Foldable;
 
 /// A Resource is an exposed top level k8s API type.
 /// These are what we output and send to k8s for management.
@@ -135,7 +133,7 @@ mod tests {
             ..Default::default()
         });
 
-        let mapped = x.fold(f).unwrap();
+        let mapped = x.fold(&f).unwrap();
         if let Object::PodTemplateSpec(p) = mapped {
             assert_eq!("foo".to_string(), p.spec.unwrap().dns_policy.unwrap())
         } else {
