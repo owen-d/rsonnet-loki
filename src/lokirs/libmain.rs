@@ -1,4 +1,7 @@
-use crate::paras::resource::{Object, Resource};
+use crate::paras::{
+    fold::Foldable,
+    resource::{Object, Resource},
+};
 
 use super::ssd;
 use anyhow::{Context, Result};
@@ -21,7 +24,7 @@ pub fn runner() -> Runner {
     for v in vec![] {
         r.push_validation(v);
     }
-    for m in vec![] {
+    for m in vec![|_: Object| -> Object { Object::Resource(Resource::Nothing) }] {
         r.push_mapper(m);
     }
     r
@@ -56,22 +59,31 @@ impl Runner {
         Ok(())
     }
 
-    pub fn map(&mut self) {
-        self.rs = self
+    pub fn map(&mut self) -> Result<()> {
+        let r: Result<Vec<Object>> = self
             .rs
             .drain(..)
-            .map(|x| {
+            .map(|x: Object| -> Result<Object> {
                 let mut mapped = x;
                 for f in &self.mappers {
-                    mapped = f(mapped)
+                    mapped = mapped.fold(*f)?;
                 }
-                mapped
+                Ok(mapped)
             })
             .collect();
+
+        match r {
+            Ok(xs) => {
+                self.rs = xs;
+                Ok(())
+            }
+            Err(e) => Err(e),
+        }
     }
 
-    pub fn run(&self) -> Result<()> {
+    pub fn run(&mut self) -> Result<()> {
         let mut serializer = serde_yaml::Serializer::new(io::stdout());
+        self.map().context("error mapping resources")?;
         self.validate().context("error validatin")?;
         for r in &self.rs {
             r.serialize(&mut serializer)?;
