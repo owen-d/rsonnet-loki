@@ -86,8 +86,8 @@ impl_fold!(StatefulSetSpec, Object::StatefulSetSpec, template);
 impl_fold!(DeploymentSpec, Object::DeploymentSpec, template);
 impl_fold!(ServiceSpec, Object::ServiceSpec);
 
-impl Foldable<Object> for Object {
-    fn fold(self, f: fn(Object) -> Object) -> Result<Self> {
+impl<F: Fn(Object) -> Object> Foldable<Object, F> for Object {
+    fn fold(self, f: &F) -> Result<Self> {
         match self {
             Object::Resource(_) => bail!("unimplemented"),
             Object::Container(val) => val.fold(f).map(Into::into),

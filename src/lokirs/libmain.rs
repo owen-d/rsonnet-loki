@@ -1,16 +1,34 @@
-use crate::paras::{
-    fold::Foldable,
-    resource::{Object, Resource},
+use crate::{
+    map,
+    paras::{
+        fold::Foldable,
+        resource::{Object, Resource},
+    },
 };
 
 use super::ssd;
 use anyhow::{Context, Result};
+use k8s_openapi::api::core::v1::Container;
 use serde::Serialize;
 use std::io;
 
 pub fn main() -> Result<()> {
     let ssd: ssd::SSD = Default::default();
-    let mut r = runner();
+    let mut r: Runner = Default::default();
+    let f = |mut c: Container| {
+        c.image = Some("grafana/loki:main".to_string());
+        c
+    };
+    // Manual way, yuck!
+    r.push_mapper(Box::new(|o: Object| {
+        if let Object::Container(mut c) = o {
+            c.image = Some("grafana/loki:main".to_string());
+            return c.into();
+        };
+        o
+    }));
+    // Much better!
+    r.push_mapper(map!(f, Object::Container));
 
     for resource in ssd.resources().into_iter() {
         r.push(resource.into());
@@ -19,28 +37,11 @@ pub fn main() -> Result<()> {
     r.run()
 }
 
-pub fn runner() -> Runner {
-    let mut r: Runner = Default::default();
-    for v in vec![] {
-        r.push_validation(v);
-    }
-    for m in vec![|o: Object| {
-        if let Object::Container(mut c) = o {
-            c.image = Some("grafana/loki:main".to_string());
-            return c.into();
-        };
-        o
-    }] {
-        r.push_mapper(m);
-    }
-    r
-}
-
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub struct Runner {
     rs: Vec<Object>,
-    validations: Vec<fn(&Object) -> Result<()>>,
-    mappers: Vec<fn(Object) -> Object>,
+    validations: Vec<Box<dyn Fn(&Object) -> Result<()>>>,
+    mappers: Vec<Box<dyn Fn(Object) -> Object>>,
 }
 
 impl Runner {
@@ -48,12 +49,12 @@ impl Runner {
         self.rs.push(x.into())
     }
 
-    pub fn push_validation(&mut self, v: fn(&Object) -> Result<()>) {
-        self.validations.push(v)
+    pub fn push_validation(&mut self, f: Box<dyn Fn(&Object) -> Result<()>>) {
+        self.validations.push(f)
     }
 
-    pub fn push_mapper(&mut self, v: fn(Object) -> Object) {
-        self.mappers.push(v)
+    pub fn push_mapper(&mut self, f: Box<dyn Fn(Object) -> Object>) {
+        self.mappers.push(f)
     }
 
     pub fn validate(&self) -> Result<()> {
@@ -72,7 +73,7 @@ impl Runner {
             .map(|x: Object| -> Result<Object> {
                 let mut mapped = x;
                 for f in &self.mappers {
-                    mapped = mapped.fold(*f)?;
+                    mapped = mapped.fold(&*f)?;
                 }
                 Ok(mapped)
             })
