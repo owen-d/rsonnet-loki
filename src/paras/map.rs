@@ -9,11 +9,12 @@ macro_rules! map {
     ($f: expr, $($cons: path),*) => {
         {
             use $crate::paras::resource::Object;
-            let f = move |o: Object| {
+            use anyhow::Result;
+            let f = move |o: Object| -> Result<Object>{
                 if let map!(@expand val, $($cons),*) = o {
-                    return $f(val).into()
+                    return $f(val).map(|v| v.into())
                 }
-                o
+                Ok(o)
             };
             Box::new(f)
         }

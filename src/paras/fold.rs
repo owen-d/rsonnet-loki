@@ -3,7 +3,7 @@ use anyhow::Result;
 pub trait Foldable<T, F>
 where
     Self: Sized,
-    F: Fn(T) -> T,
+    F: Fn(T) -> Result<T>,
 {
     fn fold(self, f: &F) -> Result<Self>;
 }
@@ -11,7 +11,7 @@ where
 impl<A, B, F> Foldable<A, F> for Option<B>
 where
     B: Foldable<A, F>,
-    F: Fn(A) -> A,
+    F: Fn(A) -> Result<A>,
 {
     fn fold(self, f: &F) -> Result<Self> {
         match self.map(|x| x.fold(f)) {
@@ -24,7 +24,7 @@ where
 impl<A, B, F> Foldable<A, F> for Vec<B>
 where
     B: Foldable<A, F>,
-    F: Fn(A) -> A,
+    F: Fn(A) -> Result<A>,
 {
     fn fold(self, f: &F) -> Result<Self> {
         self.into_iter().map(|x| x.fold(f)).collect()
@@ -102,7 +102,7 @@ macro_rules! impl_fold {
     // the most verbose form.
     // $(,)? is a shortcut to match a trailing comma or not
     ($t: ty, [$($cons: path),+]$(,)? $( $field: ident ),*) => {
-        impl <F: Fn($crate::paras::resource::Object) -> $crate::paras::resource::Object> $crate::paras::fold::Foldable<$crate::paras::resource::Object, F> for $t {
+        impl <F: Fn($crate::paras::resource::Object) -> anyhow::Result<$crate::paras::resource::Object>> $crate::paras::fold::Foldable<$crate::paras::resource::Object, F> for $t {
             fn fold(
                 self,
                 f: &F,
@@ -113,7 +113,7 @@ macro_rules! impl_fold {
                     )*
                         ..self
                 };
-                if let impl_fold!(@expand val, $($cons),*) = f(x.into()) {
+                if let Ok(impl_fold!(@expand val, $($cons),*)) = f(x.into()) {
                     return Ok(val);
                 }
                 crate::unexpected_type!($t);

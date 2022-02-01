@@ -8,7 +8,7 @@ use crate::{
 
 use super::ssd;
 use anyhow::{Context, Result};
-use k8s_openapi::api::core::v1::Container;
+use k8s_openapi::api::{apps::v1::StatefulSetSpec, core::v1::Container};
 use serde::Serialize;
 use std::io;
 
@@ -19,14 +19,14 @@ pub fn main() -> Result<()> {
     r.push_mapper(Box::new(|o: Object| {
         if let Object::Container(mut c) = o {
             c.image = Some("grafana/loki:main".to_string());
-            return c.into();
+            return Ok(c.into());
         };
-        o
+        Ok(o)
     }));
     // Much better!
     let f = |mut c: Container| {
         c.image = Some("grafana/loki:oops".to_string());
-        c
+        Ok(c)
     };
     r.push_mapper(map!(f, Object::Container));
 
@@ -37,9 +37,25 @@ pub fn main() -> Result<()> {
     r.push_mapper(map!(
         |mut c: Container| {
             c.image = Some("grafana/loki:oops".to_string());
-            c
+            Ok(c)
         },
         Object::Container
+    ));
+
+    r.push_mapper(map!(
+        |s: StatefulSetSpec| {
+            s.fold(
+                map!(
+                    |mut c: Container| {
+                        c.image = Some("grafana/loki:woop".to_string());
+                        Ok(c)
+                    },
+                    Object::Container
+                )
+                .as_ref(),
+            )
+        },
+        Object::StatefulSetSpec
     ));
 
     for resource in ssd.resources().into_iter() {
@@ -53,7 +69,7 @@ pub fn main() -> Result<()> {
 pub struct Runner {
     rs: Vec<Object>,
     validations: Vec<Box<dyn Fn(&Object) -> Result<()>>>,
-    mappers: Vec<Box<dyn Fn(Object) -> Object>>,
+    mappers: Vec<Box<dyn Fn(Object) -> Result<Object>>>,
 }
 
 impl Runner {
@@ -65,7 +81,7 @@ impl Runner {
         self.validations.push(f)
     }
 
-    pub fn push_mapper(&mut self, f: Box<dyn Fn(Object) -> Object>) {
+    pub fn push_mapper(&mut self, f: Box<dyn Fn(Object) -> Result<Object>>) {
         self.mappers.push(f)
     }
 

@@ -24,7 +24,7 @@ pub enum Resource {
     ConfigMap(ConfigMap),
 }
 
-impl<F: Fn(Object) -> Object> Foldable<Object, F> for Resource {
+impl<F: Fn(Object) -> Result<Object>> Foldable<Object, F> for Resource {
     fn fold(self, f: &F) -> Result<Self> {
         match self {
             Resource::StatefulSet(val) => val.fold(f).map(Into::into),
@@ -92,7 +92,7 @@ impl_fold!(StatefulSetSpec, Object::StatefulSetSpec, template);
 impl_fold!(DeploymentSpec, Object::DeploymentSpec, template);
 impl_fold!(ServiceSpec, Object::ServiceSpec);
 
-impl<F: Fn(Object) -> Object> Foldable<Object, F> for Object {
+impl<F: Fn(Object) -> Result<Object>> Foldable<Object, F> for Object {
     fn fold(self, f: &F) -> Result<Self> {
         match self {
             Object::Resource(val) => val.fold(f).map(Into::into),
