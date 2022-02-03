@@ -101,7 +101,7 @@ impl Runner {
             .map(|x: Object| -> Result<Object> {
                 let mut mapped = x;
                 for f in &self.mappers {
-                    mapped = mapped.fold(&*f)?;
+                    mapped = mapped.fold(f)?;
                 }
                 Ok(mapped)
             })
