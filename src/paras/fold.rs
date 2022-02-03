@@ -1,19 +1,17 @@
 use anyhow::Result;
 
-pub trait Foldable<T, F>
+pub trait Foldable<T>
 where
     Self: Sized,
-    F: Fn(T) -> Result<T>,
 {
-    fn fold(self, f: &F) -> Result<Self>;
+    fn fold(self, f: &dyn Fn(T) -> Result<T>) -> Result<Self>;
 }
 
-impl<A, B, F> Foldable<A, F> for Option<B>
+impl<A, B> Foldable<A> for Option<B>
 where
-    B: Foldable<A, F>,
-    F: Fn(A) -> Result<A>,
+    B: Foldable<A>,
 {
-    fn fold(self, f: &F) -> Result<Self> {
+    fn fold(self, f: &dyn Fn(A) -> Result<A>) -> Result<Self> {
         match self.map(|x| x.fold(f)) {
             Some(res) => res.map(Some),
             None => Ok(None),
@@ -21,12 +19,11 @@ where
     }
 }
 
-impl<A, B, F> Foldable<A, F> for Vec<B>
+impl<A, B> Foldable<A> for Vec<B>
 where
-    B: Foldable<A, F>,
-    F: Fn(A) -> Result<A>,
+    B: Foldable<A>,
 {
-    fn fold(self, f: &F) -> Result<Self> {
+    fn fold(self, f: &dyn Fn(A) -> Result<A>) -> Result<Self> {
         self.into_iter().map(|x| x.fold(f)).collect()
     }
 }
@@ -102,10 +99,10 @@ macro_rules! impl_fold {
     // the most verbose form.
     // $(,)? is a shortcut to match a trailing comma or not
     ($t: ty, [$($cons: path),+]$(,)? $( $field: ident ),*) => {
-        impl <F: Fn($crate::paras::resource::Object) -> anyhow::Result<$crate::paras::resource::Object>> $crate::paras::fold::Foldable<$crate::paras::resource::Object, F> for $t {
+        impl $crate::paras::fold::Foldable<$crate::paras::resource::Object> for $t {
             fn fold(
                 self,
-                f: &F,
+                f: &dyn Fn($crate::paras::resource::Object) -> anyhow::Result<$crate::paras::resource::Object>,
             ) -> anyhow::Result<Self> {
                 let x = Self {
                     $(

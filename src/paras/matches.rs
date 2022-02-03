@@ -1,11 +1,6 @@
 use anyhow::Result;
 
-pub trait Foldable<T>
-where
-    Self: Sized,
-{
-    fn fold(self, f: &dyn Fn(T) -> Result<T>) -> Result<Self>;
-}
+use super::fold::Foldable;
 
 pub trait Matches<A> {
     fn matches(&self) -> Option<A>;
