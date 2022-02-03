@@ -1,5 +1,5 @@
 use super::fold::Foldable;
-use crate::{impl_fold, impl_from_chain};
+use crate::{impl_fold, impl_from_chain, impl_matches};
 use anyhow::Result;
 use derive_more::From;
 use k8s_openapi::{
@@ -43,6 +43,8 @@ impl_fold!(
     metadata,
     spec
 );
+impl_matches!(StatefulSet, Object, Resource::StatefulSet, Object::Resource);
+
 // dep
 impl_from_chain!(Deployment, Resource, Object);
 impl_fold!(
@@ -51,6 +53,8 @@ impl_fold!(
     metadata,
     spec
 );
+impl_matches!(Deployment, Object, Resource::Deployment, Object::Resource);
+
 // svc
 impl_from_chain!(Service, Resource, Object);
 impl_fold!(
@@ -59,9 +63,12 @@ impl_fold!(
     metadata,
     spec
 );
+impl_matches!(Service, Object, Resource::Service, Object::Resource);
+
 // cfg
 impl_from_chain!(ConfigMap, Resource, Object);
 impl_fold!(ConfigMap, [Resource::ConfigMap, Object::Resource], metadata);
+impl_matches!(ConfigMap, Object, Resource::ConfigMap, Object::Resource);
 
 /// An Object is a k8s API type.
 /// It encompasses both exposed and unexposed object.
@@ -82,15 +89,34 @@ pub enum Object {
 }
 
 impl_fold!(Container, Object::Container);
+impl_matches!(Container, Object, Object::Container);
+
 impl_fold!(ObjectMeta, Object::ObjectMeta);
+impl_matches!(ObjectMeta, Object, Object::ObjectMeta);
+
 impl_fold!(Pod, Object::Pod, metadata, spec);
+impl_matches!(Pod, Object, Object::Pod);
+
 impl_fold!(PodTemplateSpec, Object::PodTemplateSpec, metadata, spec);
+impl_matches!(PodTemplateSpec, Object, Object::PodTemplateSpec);
+
 impl_fold!(PodSpec, Object::PodSpec, containers, affinity, volumes);
+impl_matches!(PodSpec, Object, Object::PodSpec);
+
 impl_fold!(Volume, Object::Volume);
+impl_matches!(Volume, Object, Object::Volume);
+
 impl_fold!(Affinity, Object::Affinity);
+impl_matches!(Affinity, Object, Object::Affinity);
+
 impl_fold!(StatefulSetSpec, Object::StatefulSetSpec, template);
+impl_matches!(StatefulSetSpec, Object, Object::StatefulSetSpec);
+
 impl_fold!(DeploymentSpec, Object::DeploymentSpec, template);
+impl_matches!(DeploymentSpec, Object, Object::DeploymentSpec);
+
 impl_fold!(ServiceSpec, Object::ServiceSpec);
+impl_matches!(ServiceSpec, Object, Object::ServiceSpec);
 
 impl Foldable<Object> for Object {
     fn fold(self, f: &dyn Fn(Object) -> Result<Object>) -> Result<Self> {
