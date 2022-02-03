@@ -47,9 +47,10 @@ impl SSD {
     pub fn read_deployment(&self) -> Deployment {
         let pod_template = PodTemplateSpec {
             metadata: Some(Self::read_name().into()),
-            // add read target
-            // add configmap
-            ..Default::default()
+            spec: Some(PodSpec {
+                containers: vec![self.container(None)],
+                ..Default::default()
+            }),
         };
         let spec = DeploymentSpec {
             replicas: Some(self.read_replicas),
@@ -75,7 +76,6 @@ impl SSD {
     }
 
     fn container(&self, extra_mounts: Option<VolumeMounts>) -> Container {
-        // TODO: add configmap
         // let cfg = super::config::config();
         // let cfg_v: Volume = cfg.into();
         // let n: Name = cfg_v.into();

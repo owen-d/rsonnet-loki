@@ -1,7 +1,12 @@
 use derive_more::{From, Into};
-use k8s_openapi::api::core::v1::ConfigMap;
+use k8s_openapi::{
+    api::core::v1::{ConfigMap, ConfigMapVolumeSource},
+    apimachinery::pkg::apis::meta::v1::ObjectMeta,
+};
 
 use std::hash::{Hash, Hasher};
+
+use crate::paras::conventions::{Has, Name};
 
 pub const CONFIG_HASH_ANNOTATION: &str = "config_hash";
 
@@ -29,8 +34,14 @@ pub const CONFIG_HASH_ANNOTATION: &str = "config_hash";
 //     })
 // }
 
+impl Has<ObjectMeta> for ConfigMap {
+    fn has(&self) -> ObjectMeta {
+        self.metadata.clone()
+    }
+}
+
 #[derive(From, Into, Clone)]
-pub struct HashableConfigMap(ConfigMap);
+pub struct HashableConfigMap(pub ConfigMap);
 
 impl HashableConfigMap {
     pub fn new(x: ConfigMap) -> Self {
@@ -47,5 +58,15 @@ impl Hash for HashableConfigMap {
             }
         }
         self.0.data.hash(state);
+    }
+}
+
+impl From<HashableConfigMap> for ConfigMapVolumeSource {
+    fn from(x: HashableConfigMap) -> Self {
+        let n: Option<Name> = x.0.has();
+        ConfigMapVolumeSource {
+            name: n.map(|x| x.to_string()),
+            ..Default::default()
+        }
     }
 }
