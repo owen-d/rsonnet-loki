@@ -4,7 +4,7 @@ use k8s_openapi::api::apps::v1::{
 };
 use k8s_openapi::api::core::v1::{
     ConfigMap, PersistentVolumeClaim, PersistentVolumeClaimSpec, PodTemplateSpec,
-    ResourceRequirements, Service,
+    ResourceRequirements, Service, Volume,
 };
 use k8s_openapi::api::core::v1::{Container, PodSpec};
 
@@ -13,8 +13,8 @@ use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 use maplit::btreemap;
 
 use crate::builtin::VolumeMounts;
-use crate::paras::conventions::Name;
-use crate::paras::mount::{self};
+use crate::paras::conventions::{Has, Name};
+use crate::paras::mount::{self, mount_path};
 use crate::paras::resource::Resource;
 use crate::paras::svc::cluster_ip;
 
@@ -76,29 +76,28 @@ impl SSD {
     }
 
     fn container(&self, extra_mounts: Option<VolumeMounts>) -> Container {
-        // let cfg = super::config::config();
-        // let cfg_v: Volume = cfg.into();
-        // let n: Name = cfg_v.into();
-        // let mut mounts = vec![mount::mount_name(n.clone())];
-        // if let Some(extra) = extra_mounts {
-        //     mounts.extend(extra);
-        // }
+        let cfg = super::config::config();
+        let cfg_v: Volume = cfg.into();
+        let n: Name = cfg_v.has();
+        let mut mounts = vec![mount::mount_name(n.clone())];
+        if let Some(extra) = extra_mounts {
+            mounts.extend(extra);
+        }
         Container {
-            // TODO(config arg)
-            // command: Some(vec![format!("-config.file={}/config.yaml", mount_path(n))]),
+            command: Some(vec![format!("-config.file={}/config.yaml", mount_path(n))]),
             image: Some(self.image.clone()),
             name: Self::read_name().into(),
-            volume_mounts: extra_mounts,
+            volume_mounts: Some(mounts),
             ..Default::default()
         }
     }
 
     fn pod_spec(&self, _name: Name, container: Container) -> PodSpec {
-        let _cfg = super::config::config();
+        let cfg = super::config::config();
         PodSpec {
             containers: vec![container],
             // TODO: add configmap volume
-            // volumes: Some(vec![cfg.into()]),
+            volumes: Some(vec![cfg.into()]),
             ..Default::default()
         }
     }

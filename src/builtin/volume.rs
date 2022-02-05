@@ -17,3 +17,9 @@ impl From<HashableConfigMap> for Volume {
         }
     }
 }
+
+impl Has<Name> for Volume {
+    fn has(&self) -> Name {
+        Name::new(self.name.clone())
+    }
+}
