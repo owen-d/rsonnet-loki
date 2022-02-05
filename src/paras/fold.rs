@@ -1,5 +1,10 @@
 use anyhow::Result;
 
+use super::matches::Matches;
+
+// Foldable is a trait for an entity which can be folded into `Result<Self>` via
+// a function with signature `Fn(T) -> Result<T>`.
+// So far, `<T>` has exclusively been `Self`.
 pub trait Foldable<T>
 where
     Self: Sized,
@@ -26,6 +31,43 @@ where
     fn fold(self, f: &dyn Fn(A) -> Result<A>) -> Result<Self> {
         self.into_iter().map(|x| x.fold(f)).collect()
     }
+}
+
+// Folder is a trait for the function-like entity which
+// _performs_ the fold. It's mainly used for playing type-tetris
+// to ensure we can define and group together (this is existential typing)
+// a set of disparate functions into compatible folds, for instance
+// folding a resource with a mapping function which only consumes statefulsets
+// and folding a resource with a mapping function which only consumes containers.
+// These can both be expressed in the same `Vec<Box<dyn Folder<Object>>>`.
+pub trait Folder<A> {
+    fn apply(&self, x: A) -> Result<A>;
+}
+
+// This is the main implementation we'll be using. It turns
+// a mapping function over a variant of the type and turns
+// it into a fold over the entire type!
+impl<A, B> Folder<B> for Box<dyn Fn(A) -> A>
+where
+    B: From<A> + Foldable<B> + Matches<A>,
+{
+    fn apply(&self, x: B) -> Result<B> {
+        foldmap(self, x)
+    }
+}
+
+// Ugh i have no idea what to call this, but it's not the same
+// as the `foldmap` you're probably expecting :(
+pub fn foldmap<A, B>(f: &dyn Fn(A) -> A, x: B) -> Result<B>
+where
+    B: From<A> + Foldable<B> + Matches<A>,
+{
+    return x.fold(&|v: B| {
+        if let Some(val) = v.matches() {
+            return Ok(f(val).into());
+        }
+        Ok(v)
+    });
 }
 
 #[macro_export]

@@ -2,7 +2,6 @@ pub mod affinity;
 pub mod args;
 pub mod conventions;
 pub mod fold;
-pub mod map;
 pub mod matches;
 pub mod mount;
 pub mod resource;
