@@ -49,6 +49,7 @@ impl SSD {
             metadata: Some(Self::read_name().into()),
             spec: Some(PodSpec {
                 containers: vec![self.container(None)],
+                volumes: Some(vec![super::config::config().into()]),
                 ..Default::default()
             }),
         };
@@ -96,7 +97,6 @@ impl SSD {
         let cfg = super::config::config();
         PodSpec {
             containers: vec![container],
-            // TODO: add configmap volume
             volumes: Some(vec![cfg.into()]),
             ..Default::default()
         }
