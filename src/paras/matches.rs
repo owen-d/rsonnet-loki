@@ -2,10 +2,19 @@ use anyhow::Result;
 
 use super::fold::Foldable;
 
+// A trait roughly equivalent to `If let <destructured> = x`
 pub trait Matches<A> {
     fn matches(&self) -> Option<A>;
 }
 
+impl<A: Clone> Matches<A> for A {
+    fn matches(&self) -> Option<A> {
+        Some(self.clone())
+    }
+}
+
+// Ugh i have no idea what to call this, but it's not the same
+// as the `foldmap` you're probably expecting :(
 pub fn foldmap<A, B>(f: &dyn Fn(A) -> A, x: B) -> Result<B>
 where
     B: From<A> + Foldable<B> + Matches<A>,
