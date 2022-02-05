@@ -2,6 +2,7 @@ use crate::{
     map,
     paras::{
         fold::Foldable,
+        matches::Folder,
         resource::{Object, Resource},
     },
 };
@@ -15,48 +16,55 @@ use std::io;
 pub fn main() -> Result<()> {
     let ssd: ssd::SSD = Default::default();
     let mut r: Runner = Default::default();
-    // Manual way, yuck!
-    r.push_mapper(Box::new(|o: Object| {
-        if let Object::Container(mut c) = o {
-            c.image = Some("grafana/loki:main".to_string());
-            return Ok(c.into());
-        };
-        Ok(o)
-    }));
-    // Much better!
-    let f = |mut c: Container| {
-        c.image = Some("grafana/loki:oops".to_string());
-        Ok(c)
-    };
-    r.push_mapper(map!(f, Object::Container));
+    // // Manual way, yuck!
+    // r.push_mapper(Box::new(|o: Object| {
+    //     if let Object::Container(mut c) = o {
+    //         c.image = Some("grafana/loki:main".to_string());
+    //         return Ok(c.into());
+    //     };
+    //     Ok(o)
+    // }));
+    // // Much better!
+    // let f = |mut c: Container| {
+    //     c.image = Some("grafana/loki:oops".to_string());
+    //     Ok(c)
+    // };
+    // r.push_mapper(map!(f, Object::Container));
 
-    // New hotness
-    // Any container will have it's image changed, whether
-    // it's embedded in a deployment, statefulset, etc.
-    // This will also work for your own CRDs.
-    r.push_mapper(map!(
-        |mut c: Container| {
-            c.image = Some("grafana/loki:oops".to_string());
-            Ok(c)
-        },
-        Object::Container
-    ));
+    // // New hotness
+    // // Any container will have it's image changed, whether
+    // // it's embedded in a deployment, statefulset, etc.
+    // // This will also work for your own CRDs.
+    // r.push_mapper(map!(
+    //     |mut c: Container| {
+    //         c.image = Some("grafana/loki:oops".to_string());
+    //         Ok(c)
+    //     },
+    //     Object::Container
+    // ));
 
-    r.push_mapper(map!(
-        |s: StatefulSetSpec| {
-            s.fold(
-                map!(
-                    |mut c: Container| {
-                        c.image = Some("grafana/loki:woop".to_string());
-                        Ok(c)
-                    },
-                    Object::Container
-                )
-                .as_ref(),
-            )
-        },
-        Object::StatefulSetSpec
-    ));
+    // r.push_mapper(map!(
+    //     |s: StatefulSetSpec| {
+    //         s.fold(
+    //             map!(
+    //                 |mut c: Container| {
+    //                     c.image = Some("grafana/loki:woop".to_string());
+    //                     Ok(c)
+    //                 },
+    //                 Object::Container
+    //             )
+    //             .as_ref(),
+    //         )
+    //     },
+    //     Object::StatefulSetSpec
+    // ));
+
+    let f: Box<dyn Fn(Container) -> Container> = Box::new(|mut c: Container| {
+        c.image = Some("wa".to_string());
+        c
+    });
+
+    r.push_mapper(Box::new(f));
 
     for resource in ssd.resources().into_iter() {
         r.push(resource);
@@ -69,7 +77,7 @@ pub fn main() -> Result<()> {
 pub struct Runner {
     rs: Vec<Object>,
     validations: Vec<Box<dyn Fn(&Object) -> Result<()>>>,
-    mappers: Vec<Box<dyn Fn(Object) -> Result<Object>>>,
+    mappers: Vec<Box<dyn Folder<Object>>>,
 }
 
 impl Runner {
@@ -81,7 +89,7 @@ impl Runner {
         self.validations.push(f)
     }
 
-    pub fn push_mapper(&mut self, f: Box<dyn Fn(Object) -> Result<Object>>) {
+    pub fn push_mapper(&mut self, f: Box<dyn Folder<Object>>) {
         self.mappers.push(f)
     }
 
@@ -101,7 +109,7 @@ impl Runner {
             .map(|x: Object| -> Result<Object> {
                 let mut mapped = x;
                 for f in &self.mappers {
-                    mapped = mapped.fold(f)?;
+                    mapped = f.apply(mapped)?;
                 }
                 Ok(mapped)
             })

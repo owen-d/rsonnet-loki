@@ -13,6 +13,20 @@ impl<A: Clone> Matches<A> for A {
     }
 }
 
+// trait for binding closures for later application?
+pub trait Folder<A> {
+    fn apply(&self, x: A) -> Result<A>;
+}
+
+impl<A, B> Folder<B> for Box<dyn Fn(A) -> A>
+where
+    B: From<A> + Foldable<B> + Matches<A>,
+{
+    fn apply(&self, x: B) -> Result<B> {
+        foldmap(self, x)
+    }
+}
+
 // Ugh i have no idea what to call this, but it's not the same
 // as the `foldmap` you're probably expecting :(
 pub fn foldmap<A, B>(f: &dyn Fn(A) -> A, x: B) -> Result<B>
