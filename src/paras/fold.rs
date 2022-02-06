@@ -2,34 +2,62 @@ use anyhow::Result;
 
 use super::matches::Matches;
 
-// Foldable is a trait for an entity which can be folded into `Result<Self>` via
-// a function with signature `Fn(T) -> Result<T>`.
-// So far, `<T>` has exclusively been `Self`.
-pub trait Foldable<T>
+pub trait Foldable<A, B, C>
 where
     Self: Sized,
 {
-    fn fold(self, f: &dyn Fn(T) -> Result<T>) -> Result<Self>;
+    fn fold(&self, f: &dyn Fn(&A) -> Result<B>) -> Result<C>;
 }
 
-impl<A, B> Foldable<A> for Option<B>
+impl<A, B, C, D> Foldable<A, B, Option<C>> for Option<D>
 where
-    B: Foldable<A>,
+    D: Foldable<A, B, C>,
 {
-    fn fold(self, f: &dyn Fn(A) -> Result<A>) -> Result<Self> {
-        match self.map(|x| x.fold(f)) {
+    fn fold(&self, f: &dyn Fn(&A) -> Result<B>) -> Result<Option<C>> {
+        match self.as_ref().map(|x| x.fold(f)) {
             Some(res) => res.map(Some),
             None => Ok(None),
         }
     }
 }
 
-impl<A, B> Foldable<A> for Vec<B>
+impl<A, B, C, D> Foldable<A, B, Vec<C>> for Vec<D>
 where
-    B: Foldable<A>,
+    D: Foldable<A, B, C>,
 {
-    fn fold(self, f: &dyn Fn(A) -> Result<A>) -> Result<Self> {
-        self.into_iter().map(|x| x.fold(f)).collect()
+    fn fold(&self, f: &dyn Fn(&A) -> Result<B>) -> Result<Vec<C>> {
+        self.iter().map(|x| x.fold(f)).collect()
+    }
+}
+
+// Foldable is a trait for an entity which can be folded into `Result<Self>` via
+// a function with signature `Fn(T) -> Result<T>`.
+// So far, `<T>` has exclusively been `Self`.
+pub trait FoldableMut<T>
+where
+    Self: Sized,
+{
+    fn fold_mut(self, f: &dyn Fn(T) -> Result<T>) -> Result<Self>;
+}
+
+impl<A, B> FoldableMut<A> for Option<B>
+where
+    B: FoldableMut<A>,
+{
+    fn fold_mut(self, f: &dyn Fn(A) -> Result<A>) -> Result<Self> {
+        match self.map(|x| x.fold_mut(f)) {
+            Some(res) => res.map(Some),
+            None => Ok(None),
+        }
+    }
+}
+
+impl<A, B> FoldableMut<A> for Vec<B>
+where
+    B: FoldableMut<A>,
+{
+    fn fold_mut(self, f: &dyn Fn(A) -> Result<A>) -> Result<Self> {
+        self.into_iter().map(|x| x.fold_mut(f)).collect()
     }
 }
 
@@ -49,7 +77,7 @@ pub trait Folder<A> {
 // it into a fold over the entire type!
 impl<A, B> Folder<B> for Box<dyn Fn(A) -> A>
 where
-    B: From<A> + Foldable<B> + Matches<A>,
+    B: From<A> + FoldableMut<B> + Matches<A>,
 {
     fn apply(&self, x: B) -> Result<B> {
         foldmap(self, x)
@@ -60,9 +88,9 @@ where
 // as the `foldmap` you're probably expecting :(
 pub fn foldmap<A, B>(f: &dyn Fn(A) -> A, x: B) -> Result<B>
 where
-    B: From<A> + Foldable<B> + Matches<A>,
+    B: From<A> + FoldableMut<B> + Matches<A>,
 {
-    return x.fold(&|v: B| {
+    return x.fold_mut(&|v: B| {
         if let Some(val) = v.matches() {
             return Ok(f(val).into());
         }
@@ -141,14 +169,14 @@ macro_rules! impl_fold {
     // the most verbose form.
     // $(,)? is a shortcut to match a trailing comma or not
     ($t: ty, [$($cons: path),+]$(,)? $( $field: ident ),*) => {
-        impl $crate::paras::fold::Foldable<$crate::paras::resource::Object> for $t {
-            fn fold(
+        impl $crate::paras::fold::FoldableMut<$crate::paras::resource::Object> for $t {
+            fn fold_mut(
                 self,
                 f: &dyn Fn($crate::paras::resource::Object) -> anyhow::Result<$crate::paras::resource::Object>,
             ) -> anyhow::Result<Self> {
                 let x = Self {
                     $(
-                        $field: self.$field.fold(f)?,
+                        $field: self.$field.fold_mut(f)?,
                     )*
                         ..self
                 };

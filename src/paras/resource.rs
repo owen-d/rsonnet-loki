@@ -1,4 +1,4 @@
-use super::fold::Foldable;
+use super::fold::FoldableMut;
 use crate::{impl_fold, impl_from_chain, impl_matches};
 use anyhow::Result;
 use derive_more::From;
@@ -24,13 +24,13 @@ pub enum Resource {
     ConfigMap(ConfigMap),
 }
 
-impl Foldable<Object> for Resource {
-    fn fold(self, f: &dyn Fn(Object) -> Result<Object>) -> Result<Self> {
+impl FoldableMut<Object> for Resource {
+    fn fold_mut(self, f: &dyn Fn(Object) -> Result<Object>) -> Result<Self> {
         match self {
-            Resource::StatefulSet(val) => val.fold(f).map(Into::into),
-            Resource::Deployment(val) => val.fold(f).map(Into::into),
-            Resource::Service(val) => val.fold(f).map(Into::into),
-            Resource::ConfigMap(val) => val.fold(f).map(Into::into),
+            Resource::StatefulSet(val) => val.fold_mut(f).map(Into::into),
+            Resource::Deployment(val) => val.fold_mut(f).map(Into::into),
+            Resource::Service(val) => val.fold_mut(f).map(Into::into),
+            Resource::ConfigMap(val) => val.fold_mut(f).map(Into::into),
         }
     }
 }
@@ -118,20 +118,20 @@ impl_matches!(DeploymentSpec, Object, Object::DeploymentSpec);
 impl_fold!(ServiceSpec, Object::ServiceSpec);
 impl_matches!(ServiceSpec, Object, Object::ServiceSpec);
 
-impl Foldable<Object> for Object {
-    fn fold(self, f: &dyn Fn(Object) -> Result<Object>) -> Result<Self> {
+impl FoldableMut<Object> for Object {
+    fn fold_mut(self, f: &dyn Fn(Object) -> Result<Object>) -> Result<Self> {
         match self {
-            Object::Resource(val) => val.fold(f).map(Into::into),
-            Object::Container(val) => val.fold(f).map(Into::into),
-            Object::ObjectMeta(val) => val.fold(f).map(Into::into),
-            Object::Pod(val) => val.fold(f).map(Into::into),
-            Object::PodTemplateSpec(val) => val.fold(f).map(Into::into),
-            Object::PodSpec(val) => val.fold(f).map(Into::into),
-            Object::Volume(val) => val.fold(f).map(Into::into),
-            Object::Affinity(val) => val.fold(f).map(Into::into),
-            Object::StatefulSetSpec(val) => val.fold(f).map(Into::into),
-            Object::DeploymentSpec(val) => val.fold(f).map(Into::into),
-            Object::ServiceSpec(val) => val.fold(f).map(Into::into),
+            Object::Resource(val) => val.fold_mut(f).map(Into::into),
+            Object::Container(val) => val.fold_mut(f).map(Into::into),
+            Object::ObjectMeta(val) => val.fold_mut(f).map(Into::into),
+            Object::Pod(val) => val.fold_mut(f).map(Into::into),
+            Object::PodTemplateSpec(val) => val.fold_mut(f).map(Into::into),
+            Object::PodSpec(val) => val.fold_mut(f).map(Into::into),
+            Object::Volume(val) => val.fold_mut(f).map(Into::into),
+            Object::Affinity(val) => val.fold_mut(f).map(Into::into),
+            Object::StatefulSetSpec(val) => val.fold_mut(f).map(Into::into),
+            Object::DeploymentSpec(val) => val.fold_mut(f).map(Into::into),
+            Object::ServiceSpec(val) => val.fold_mut(f).map(Into::into),
         }
     }
 }
@@ -159,7 +159,7 @@ mod tests {
             ..Default::default()
         });
 
-        let mapped = x.fold(&f).unwrap();
+        let mapped = x.fold_mut(&f).unwrap();
         if let Object::PodTemplateSpec(p) = mapped {
             assert_eq!("foo".to_string(), p.spec.unwrap().dns_policy.unwrap())
         } else {
