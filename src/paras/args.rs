@@ -1,5 +1,7 @@
 use std::fmt;
 
+use super::conventions::Name;
+
 /// Target is used for subcomponent selection and explicitly maps to the `-target=<target>` CLI flag.
 #[derive(PartialEq, Clone, Default, Debug)]
 pub struct Target(String);
@@ -16,6 +18,12 @@ impl Target {
             return None;
         }
         Some(Self::new(trimmed.trim_start_matches("target=").to_string()))
+    }
+}
+
+impl From<Name> for Target {
+    fn from(n: Name) -> Self {
+        Self::new(n.into())
     }
 }
 

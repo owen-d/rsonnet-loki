@@ -13,7 +13,8 @@ use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 use maplit::btreemap;
 
 use crate::builtin::VolumeMounts;
-use crate::paras::conventions::{Has, Name};
+use crate::paras::args::Target;
+use crate::paras::conventions::{Has, Name, With};
 use crate::paras::mount::{self, mount_path};
 use crate::paras::resource::Resource;
 use crate::paras::svc::cluster_ip;
@@ -48,7 +49,9 @@ impl SSD {
         let pod_template = PodTemplateSpec {
             metadata: Some(Self::read_name().into()),
             spec: Some(PodSpec {
-                containers: vec![self.container(None)],
+                containers: vec![self
+                    .container(None)
+                    .with(Target::new(Self::read_name().to_string()))],
                 volumes: Some(vec![super::config::config().into()]),
                 ..Default::default()
             }),
@@ -132,8 +135,8 @@ impl SSD {
             spec: self
                 .pod_spec(
                     Self::write_name(),
-                    // TODO: add write target
-                    self.container(Some(vec![mount::mount_name(data)])),
+                    self.container(Some(vec![mount::mount_name(data)]))
+                        .with(Target::new(Self::write_name().to_string())),
                 )
                 .into(),
         };
