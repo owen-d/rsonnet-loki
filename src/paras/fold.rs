@@ -101,43 +101,32 @@ macro_rules! unexpected_type {
 /// );
 #[macro_export]
 macro_rules! impl_fold {
-    (@expand $val: pat$(,)?) => {$val};
-    // match no trailing commas
-    (@expand $val: pat, $cons: path) => {
-        impl_fold!(@expand $cons($val),)
+    // shortcut for no foldable embedded fields
+    ($t: ty) =>{
+        impl_fold!($t,);
     };
-    (@expand $val: pat, $cons: path, $($rest: path),*) => {
-        impl_fold!(@expand $cons($val), $($rest,)*)
-    };
-
-
-    // shortcut for no trailing comma and no subfields to be folded.
-    ($t: ty, $cons: path) => { impl_fold!($t, $cons,);};
-    // shortcut for only one constructor with a comma and possible subfields.
-    ($t: ty, $cons: path, $( $field: ident ),*) => {
-        impl_fold!($t, [$cons], $($field),*);
-    };
-
-    // This is the main macro. It takes a type, a slice of constructors,
-    // and an optional comma + optional list of subfields to fold. This is
-    // the most verbose form.
-    // $(,)? is a shortcut to match a trailing comma or not
-    ($t: ty, [$($cons: path),+]$(,)? $( $field: ident ),*) => {
+    ($t: ty, $( $field: ident ),*) => {
         impl $crate::paras::fold::Foldable<$crate::paras::resource::Object, $crate::paras::resource::Object, Self> for $t {
             fn fold(
                 self,
                 f: &dyn Fn($crate::paras::resource::Object) -> anyhow::Result<$crate::paras::resource::Object>,
             ) -> anyhow::Result<Self> {
+                use $crate::paras::matches::Matches;
                 let x = Self {
                     $(
                         $field: self.$field.fold(f)?,
                     )*
                         ..self
                 };
-                if let Ok(impl_fold!(@expand val, $($cons),*)) = f(x.into()) {
-                    return Ok(val);
-                }
-                crate::unexpected_type!($t);
+                f(x.into()).and_then(|val| {
+                    let m: Option<Self> = val.matches();
+                    match m {
+                        Some(v) => Ok(v),
+                        None => {
+                            crate::unexpected_type!($t);
+                        },
+                    }
+                })
             }
         }
     };

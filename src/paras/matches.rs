@@ -14,10 +14,10 @@ macro_rules! impl_matches {
     (@expand $val: pat$(,)?) => {$val};
     // match no trailing commas
     (@expand $val: pat, $cons: path) => {
-        impl_fold!(@expand $cons($val),)
+        impl_matches!(@expand $cons($val),)
     };
     (@expand $val: pat, $cons: path, $($rest: path),*) => {
-        impl_fold!(@expand $cons($val), $($rest,)*)
+        impl_matches!(@expand $cons($val), $($rest,)*)
     };
 
     ($a: ty, $b: ty, $($cons: path),*) => {
