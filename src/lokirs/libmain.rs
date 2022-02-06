@@ -1,5 +1,5 @@
 use crate::paras::{
-    fold::FolderMut,
+    fold::Folder,
     matches::Matches,
     resource::{Object, Resource},
 };
@@ -32,7 +32,7 @@ pub fn main() -> Result<()> {
 pub struct Runner {
     rs: Vec<Object>,
     validations: Vec<Box<dyn Fn(&Object) -> Result<()>>>,
-    mappers: Vec<Box<dyn FolderMut<Object>>>,
+    mappers: Vec<Box<dyn Folder<Object, Object>>>,
 }
 
 impl Runner {

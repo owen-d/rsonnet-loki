@@ -52,74 +52,6 @@ where
     }
 }
 
-// Foldable is a trait for an entity which can be folded into `Result<Self>` via
-// a function with signature `Fn(T) -> Result<T>`.
-// So far, `<T>` has exclusively been `Self`.
-pub trait FoldableMut<T>
-where
-    Self: Sized,
-{
-    fn fold_mut(self, f: &dyn Fn(T) -> Result<T>) -> Result<Self>;
-}
-
-impl<A, B> FoldableMut<A> for Option<B>
-where
-    B: FoldableMut<A>,
-{
-    fn fold_mut(self, f: &dyn Fn(A) -> Result<A>) -> Result<Self> {
-        match self.map(|x| x.fold_mut(f)) {
-            Some(res) => res.map(Some),
-            None => Ok(None),
-        }
-    }
-}
-
-impl<A, B> FoldableMut<A> for Vec<B>
-where
-    B: FoldableMut<A>,
-{
-    fn fold_mut(self, f: &dyn Fn(A) -> Result<A>) -> Result<Self> {
-        self.into_iter().map(|x| x.fold_mut(f)).collect()
-    }
-}
-
-// Folder is a trait for the function-like entity which
-// _performs_ the fold. It's mainly used for playing type-tetris
-// to ensure we can define and group together (this is existential typing)
-// a set of disparate functions into compatible folds, for instance
-// folding a resource with a mapping function which only consumes statefulsets
-// and folding a resource with a mapping function which only consumes containers.
-// These can both be expressed in the same `Vec<Box<dyn Folder<Object>>>`.
-pub trait FolderMut<A> {
-    fn apply(&self, x: A) -> Result<A>;
-}
-
-// This is the main implementation we'll be using. It turns
-// a mapping function over a variant of the type and turns
-// it into a fold over the entire type!
-impl<A, B> FolderMut<B> for Box<dyn Fn(A) -> A>
-where
-    B: From<A> + FoldableMut<B> + Matches<A>,
-{
-    fn apply(&self, x: B) -> Result<B> {
-        foldmap_mut(self, x)
-    }
-}
-
-// Ugh i have no idea what to call this, but it's not the same
-// as the `foldmap` you're probably expecting :(
-pub fn foldmap_mut<A, B>(f: &dyn Fn(A) -> A, x: B) -> Result<B>
-where
-    B: From<A> + FoldableMut<B> + Matches<A>,
-{
-    return x.fold_mut(&|v: B| {
-        if let Some(val) = v.matches() {
-            return Ok(f(val).into());
-        }
-        Ok(v)
-    });
-}
-
 #[macro_export]
 macro_rules! impl_from_chain {
     ($src: ty, $interim: ty, $dst: ty) => {
@@ -191,14 +123,14 @@ macro_rules! impl_fold {
     // the most verbose form.
     // $(,)? is a shortcut to match a trailing comma or not
     ($t: ty, [$($cons: path),+]$(,)? $( $field: ident ),*) => {
-        impl $crate::paras::fold::FoldableMut<$crate::paras::resource::Object> for $t {
-            fn fold_mut(
+        impl $crate::paras::fold::Foldable<$crate::paras::resource::Object, $crate::paras::resource::Object, Self> for $t {
+            fn fold(
                 self,
                 f: &dyn Fn($crate::paras::resource::Object) -> anyhow::Result<$crate::paras::resource::Object>,
             ) -> anyhow::Result<Self> {
                 let x = Self {
                     $(
-                        $field: self.$field.fold_mut(f)?,
+                        $field: self.$field.fold(f)?,
                     )*
                         ..self
                 };
