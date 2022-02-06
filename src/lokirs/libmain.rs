@@ -6,7 +6,7 @@ use crate::paras::{
 };
 
 use super::ssd;
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use k8s_openapi::api::{apps::v1::StatefulSet, core::v1::Container};
 use serde::Serialize;
 use std::io;
@@ -95,8 +95,8 @@ impl Runner {
 
     pub fn run(&mut self) -> Result<()> {
         let mut serializer = serde_yaml::Serializer::new(io::stdout());
-        self.map()?;
-        self.validate()?;
+        self.map().context("error transforming resources")?;
+        self.validate().context("error validating resources")?;
         for r in &self.rs {
             r.serialize(&mut serializer)?;
         }
