@@ -2,10 +2,11 @@ use crate::paras::{
     fold::Folder,
     matches::Matches,
     resource::{Object, Resource},
+    valid::Validator,
 };
 
 use super::ssd;
-use anyhow::{Context, Result};
+use anyhow::{bail, Result};
 use k8s_openapi::api::{apps::v1::StatefulSet, core::v1::Container};
 use serde::Serialize;
 use std::io;
@@ -21,6 +22,13 @@ pub fn main() -> Result<()> {
 
     r.push_mapper(Box::new(|s: StatefulSet| s));
 
+    r.push_validation(Box::new(|c: &Container| match c.args {
+        Some(_) => Ok(()),
+        None => {
+            bail!("arguments required for container");
+        }
+    }));
+
     for resource in ssd.resources().into_iter() {
         r.push(resource);
     }
@@ -31,7 +39,7 @@ pub fn main() -> Result<()> {
 #[derive(Default)]
 pub struct Runner {
     rs: Vec<Object>,
-    validations: Vec<Box<dyn Fn(&Object) -> Result<()>>>,
+    validations: Vec<Box<dyn Validator<Object>>>,
     mappers: Vec<Box<dyn Folder<Object, Object>>>,
 }
 
@@ -40,8 +48,11 @@ impl Runner {
         self.rs.push(x.into())
     }
 
-    pub fn push_validation(&mut self, f: Box<dyn Fn(&Object) -> Result<()>>) {
-        self.validations.push(f)
+    pub fn push_validation<A: 'static>(&mut self, f: Box<dyn Fn(&A) -> Result<()>>)
+    where
+        Object: Matches<A>,
+    {
+        self.validations.push(Box::new(f))
     }
 
     pub fn push_mapper<A: 'static>(&mut self, f: Box<dyn Fn(A) -> A>)
@@ -54,7 +65,7 @@ impl Runner {
     pub fn validate(&self) -> Result<()> {
         for r in &self.rs {
             for v in &self.validations {
-                v(r)?;
+                v.validate(r)?;
             }
         }
         Ok(())
@@ -84,8 +95,8 @@ impl Runner {
 
     pub fn run(&mut self) -> Result<()> {
         let mut serializer = serde_yaml::Serializer::new(io::stdout());
-        self.map().context("error mapping resources")?;
-        self.validate().context("error validatin")?;
+        self.map()?;
+        self.validate()?;
         for r in &self.rs {
             r.serialize(&mut serializer)?;
         }
