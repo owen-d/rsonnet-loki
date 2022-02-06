@@ -6,15 +6,15 @@ pub trait Foldable<A, B, C>
 where
     Self: Sized,
 {
-    fn fold(&self, f: &dyn Fn(&A) -> Result<B>) -> Result<C>;
+    fn fold(self, f: &dyn Fn(A) -> Result<B>) -> Result<C>;
 }
 
 impl<A, B, C, D> Foldable<A, B, Option<C>> for Option<D>
 where
     D: Foldable<A, B, C>,
 {
-    fn fold(&self, f: &dyn Fn(&A) -> Result<B>) -> Result<Option<C>> {
-        match self.as_ref().map(|x| x.fold(f)) {
+    fn fold(self, f: &dyn Fn(A) -> Result<B>) -> Result<Option<C>> {
+        match self.map(|x| x.fold(f)) {
             Some(res) => res.map(Some),
             None => Ok(None),
         }
@@ -25,8 +25,30 @@ impl<A, B, C, D> Foldable<A, B, Vec<C>> for Vec<D>
 where
     D: Foldable<A, B, C>,
 {
-    fn fold(&self, f: &dyn Fn(&A) -> Result<B>) -> Result<Vec<C>> {
-        self.iter().map(|x| x.fold(f)).collect()
+    fn fold(self, f: &dyn Fn(A) -> Result<B>) -> Result<Vec<C>> {
+        self.into_iter().map(|x| x.fold(f)).collect()
+    }
+}
+
+pub trait Folder<A, B> {
+    fn apply(&self, x: A) -> Result<B>;
+}
+
+// This is the main implementation we'll be using. It turns
+// a mapping function over a variant of the type and turns
+// it into a fold over the entire type!
+impl<A, B, C, D> Folder<C, D> for Box<dyn Fn(A) -> B>
+where
+    C: Matches<A> + Foldable<C, D, D>,
+    D: From<B> + From<C>,
+{
+    fn apply(&self, x: C) -> Result<D> {
+        x.fold(&|v: C| {
+            if let Some(val) = v.matches() {
+                return Ok(self(val).into());
+            }
+            Ok(v.into())
+        })
     }
 }
 
@@ -68,25 +90,25 @@ where
 // folding a resource with a mapping function which only consumes statefulsets
 // and folding a resource with a mapping function which only consumes containers.
 // These can both be expressed in the same `Vec<Box<dyn Folder<Object>>>`.
-pub trait Folder<A> {
+pub trait FolderMut<A> {
     fn apply(&self, x: A) -> Result<A>;
 }
 
 // This is the main implementation we'll be using. It turns
 // a mapping function over a variant of the type and turns
 // it into a fold over the entire type!
-impl<A, B> Folder<B> for Box<dyn Fn(A) -> A>
+impl<A, B> FolderMut<B> for Box<dyn Fn(A) -> A>
 where
     B: From<A> + FoldableMut<B> + Matches<A>,
 {
     fn apply(&self, x: B) -> Result<B> {
-        foldmap(self, x)
+        foldmap_mut(self, x)
     }
 }
 
 // Ugh i have no idea what to call this, but it's not the same
 // as the `foldmap` you're probably expecting :(
-pub fn foldmap<A, B>(f: &dyn Fn(A) -> A, x: B) -> Result<B>
+pub fn foldmap_mut<A, B>(f: &dyn Fn(A) -> A, x: B) -> Result<B>
 where
     B: From<A> + FoldableMut<B> + Matches<A>,
 {
