@@ -15,12 +15,12 @@ pub fn main() -> Result<()> {
     let ssd: ssd::SSD = Default::default();
     let mut r: Runner = Default::default();
 
-    r.push_mapper(Box::new(|mut c: Container| {
+    r.push_transform(Box::new(|mut c: Container| {
         c.image = Some("wa".to_string());
         c
     }));
 
-    r.push_mapper(Box::new(|s: StatefulSet| s));
+    r.push_transform(Box::new(|s: StatefulSet| s));
 
     r.push_validation(Box::new(|c: &Container| match c.args {
         Some(_) => Ok(()),
@@ -40,7 +40,7 @@ pub fn main() -> Result<()> {
 pub struct Runner {
     rs: Vec<Object>,
     validations: Vec<Box<dyn Validator<Object>>>,
-    mappers: Vec<Box<dyn Folder<Object, Object>>>,
+    transforms: Vec<Box<dyn Folder<Object, Object>>>,
 }
 
 impl Runner {
@@ -55,11 +55,11 @@ impl Runner {
         self.validations.push(Box::new(f))
     }
 
-    pub fn push_mapper<A: 'static>(&mut self, f: Box<dyn Fn(A) -> A>)
+    pub fn push_transform<A: 'static>(&mut self, f: Box<dyn Fn(A) -> A>)
     where
         Object: From<A> + Matches<A>,
     {
-        self.mappers.push(Box::new(f))
+        self.transforms.push(Box::new(f))
     }
 
     pub fn validate(&self) -> Result<()> {
@@ -71,13 +71,13 @@ impl Runner {
         Ok(())
     }
 
-    pub fn map(&mut self) -> Result<()> {
+    pub fn transform(&mut self) -> Result<()> {
         let r: Result<Vec<Object>> = self
             .rs
             .drain(..)
             .map(|x: Object| -> Result<Object> {
                 let mut mapped = x;
-                for f in &self.mappers {
+                for f in &self.transforms {
                     mapped = f.apply(mapped)?;
                 }
                 Ok(mapped)
@@ -95,7 +95,7 @@ impl Runner {
 
     pub fn run(&mut self) -> Result<()> {
         let mut serializer = serde_yaml::Serializer::new(io::stdout());
-        self.map().context("error transforming resources")?;
+        self.transform().context("error transforming resources")?;
         self.validate().context("error validating resources")?;
         for r in &self.rs {
             r.serialize(&mut serializer)?;
