@@ -1,4 +1,4 @@
-use super::Has;
+use super::has::Has;
 
 pub trait With<A> {
     fn with(self, x: A) -> Self;

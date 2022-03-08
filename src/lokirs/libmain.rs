@@ -1,18 +1,16 @@
-use crate::paras::{
+use crate::builtin::{
     fold::Folder,
     matches::Matches,
     resource::{Object, Resource},
     valid::Validator,
 };
 
-use super::ssd;
 use anyhow::{bail, Context, Result};
 use k8s_openapi::api::{apps::v1::StatefulSet, core::v1::Container};
 use serde::Serialize;
 use std::io;
 
 pub fn main() -> Result<()> {
-    let ssd: ssd::SSD = Default::default();
     let mut r: Runner = Default::default();
 
     r.push_transform(Box::new(|mut c: Container| {
@@ -29,7 +27,8 @@ pub fn main() -> Result<()> {
         }
     }));
 
-    for resource in ssd.resources().into_iter() {
+    let resources: Vec<Resource> = vec![];
+    for resource in resources.into_iter() {
         r.push(resource);
     }
 

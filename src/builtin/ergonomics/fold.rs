@@ -99,12 +99,12 @@ macro_rules! impl_fold {
         impl_fold!($t,);
     };
     ($t: ty, $( $field: ident ),*) => {
-        impl $crate::paras::fold::Foldable<$crate::paras::resource::Object, $crate::paras::resource::Object, Self> for $t {
+        impl $crate::builtin::fold::Foldable<$crate::builtin::resource::Object, $crate::builtin::resource::Object, Self> for $t {
             fn fold(
                 self,
-                f: &dyn Fn($crate::paras::resource::Object) -> anyhow::Result<$crate::paras::resource::Object>,
+                f: &dyn Fn($crate::builtin::resource::Object) -> anyhow::Result<$crate::builtin::resource::Object>,
             ) -> anyhow::Result<Self> {
-                use $crate::paras::matches::Matches;
+                use $crate::builtin::matches::Matches;
                 let x = Self {
                     $(
                         $field: self.$field.fold(f)?,

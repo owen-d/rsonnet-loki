@@ -21,7 +21,7 @@ macro_rules! impl_matches {
     };
 
     ($a: ty, $b: ty, $($cons: path),*) => {
-        impl $crate::paras::matches::Matches<$a> for $b {
+        impl $crate::builtin::matches::Matches<$a> for $b {
             fn matches(&self) -> Option<$a> {
                 if let impl_matches!(@expand val, $($cons),*) = self {
                     return Some(val.clone());
