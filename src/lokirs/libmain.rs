@@ -17,10 +17,10 @@ pub fn main() -> Result<()> {
 
     r.push_transform(Box::new(|mut c: Container| {
         c.image = Some("wa".to_string());
-        c
+        Ok(c)
     }));
 
-    r.push_transform(Box::new(|s: StatefulSet| s));
+    r.push_transform(Box::new(|s: StatefulSet| Ok(s)));
 
     r.push_validation(Box::new(|c: &Container| match c.args {
         Some(_) => Ok(()),
@@ -55,7 +55,7 @@ impl Runner {
         self.validations.push(Box::new(f))
     }
 
-    pub fn push_transform<A: 'static>(&mut self, f: Box<dyn Fn(A) -> A>)
+    pub fn push_transform<A: 'static>(&mut self, f: Box<dyn Fn(A) -> Result<A>>)
     where
         Object: From<A> + Matches<A>,
     {

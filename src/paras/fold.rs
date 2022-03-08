@@ -37,7 +37,7 @@ pub trait Folder<A, B> {
 // This is the main implementation we'll be using. It turns
 // a mapping function over a variant of the type and turns
 // it into a fold over the entire type!
-impl<A, B, C, D> Folder<C, D> for Box<dyn Fn(A) -> B>
+impl<A, B, C, D> Folder<C, D> for Box<dyn Fn(A) -> Result<B>>
 where
     C: Matches<A> + Foldable<C, D, D>,
     D: From<B> + From<C>,
@@ -45,7 +45,7 @@ where
     fn apply(&self, x: C) -> Result<D> {
         x.fold(&|v: C| {
             if let Some(val) = v.matches() {
-                return Ok(self(val).into());
+                return self(val).map(Into::into);
             }
             Ok(v.into())
         })
