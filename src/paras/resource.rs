@@ -60,7 +60,6 @@ impl_matches!(ConfigMap, Object, Resource::ConfigMap, Object::Resource);
 /// These are subject to mappings and validations.
 #[derive(Clone, Serialize, Deserialize, From)]
 pub enum Object {
-    Multi(Objects),
     Resource(super::resource::Resource),
     Container(Container),
     ObjectMeta(ObjectMeta),
@@ -73,13 +72,6 @@ pub enum Object {
     Affinity(Affinity),
     ServiceSpec(ServiceSpec),
 }
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Objects {
-    objects: Vec<Object>,
-}
-impl_fold!(Objects, objects);
-impl_matches!(Objects, Object, Object::Multi);
 
 impl_fold!(Container);
 impl_matches!(Container, Object, Object::Container);
@@ -114,7 +106,6 @@ impl_matches!(ServiceSpec, Object, Object::ServiceSpec);
 impl Foldable<Object, Object, Self> for Object {
     fn fold(self, f: &dyn Fn(Object) -> Result<Object>) -> Result<Self> {
         match self {
-            Object::Multi(val) => val.fold(f).map(Into::into),
             Object::Resource(val) => val.fold(f).map(Into::into),
             Object::Container(val) => val.fold(f).map(Into::into),
             Object::ObjectMeta(val) => val.fold(f).map(Into::into),
